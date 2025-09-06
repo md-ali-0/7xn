@@ -10,7 +10,8 @@
     "security-audit": "npm audit",
     "logs:security": "tail -f logs/security.log",
     "logs:admin": "tail -f logs/admin.log",
-    "logs:performance": "tail -f logs/performance.log"
+    "logs:performance": "tail -f logs/performance.log",
+    "vercel-build": "echo 'Building for Vercel'"
   },
   "keywords": [
     "authentication",

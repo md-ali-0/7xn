@@ -1,0 +1,31 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "app.js",
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": [
+          "public/**",
+          "views/**",
+          "config/**",
+          "middleware/**",
+          "models/**",
+          "routes/**",
+          "scripts/**"
+        ]
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "app.js"
+    }
+  ],
+  "env": {
+    "NODE_ENV": "production",
+    "SESSION_SECRET": "@session-secret",
+    "MONGODB_URI": "@mongodb-uri"
+  }
+}
