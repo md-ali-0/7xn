@@ -55,11 +55,26 @@ npm start
 1. Create a new project on Vercel
 2. Connect your GitHub repository
 3. Set the following environment variables in Vercel:
-   - `MONGODB_URI`: Your MongoDB connection string
-   - `SESSION_SECRET`: A secure secret for session encryption
+   - `MONGODB_URI`: Your MongoDB connection string (you can use MongoDB Atlas for a cloud database)
+   - `SESSION_SECRET`: A strong, random secret key for session encryption
 4. Deploy the project
 
 The application will be available at your Vercel URL.
+
+## Environment Variables
+
+You must set the following environment variables in your Vercel project settings:
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| MONGODB_URI | MongoDB connection string | mongodb+srv://user:pass@cluster.mongodb.net/db |
+| SESSION_SECRET | Secret key for session encryption | a-very-long-random-string |
+
+To set these in Vercel:
+1. Go to your project in the Vercel dashboard
+2. Click on "Settings" → "Environment Variables"
+3. Add each variable with its value
+4. Redeploy your application
 
 ## API Documentation
 
