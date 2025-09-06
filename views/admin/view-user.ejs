@@ -74,6 +74,18 @@
                     <% } else { %>
                         <p><strong>Last Login:</strong> Never</p>
                     <% } %>
+                    <p><strong>Registered Device:</strong> 
+                        <% if (user.registeredDeviceId) { %>
+                            <span class="text-success"><%= user.registeredDeviceId %></span>
+                            <form action="/admin/users/reset-device/<%= user._id %>" method="POST" style="display: inline; margin-left: 10px;">
+                                <button type="submit" class="btn btn-warning btn-sm" onclick="return confirm('Are you sure you want to reset the device registration for this user?')">
+                                    Reset Device
+                                </button>
+                            </form>
+                        <% } else { %>
+                            <span class="text-muted">Not registered</span>
+                        <% } %>
+                    </p>
                     <p><strong>Last Updated:</strong> <%= user.updatedAt.toLocaleDateString() %> <%= user.updatedAt.toLocaleTimeString() %></p>
                 </div>
                 

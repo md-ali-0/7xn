@@ -21,6 +21,27 @@
                     <div class="alert alert-error"><%= error %></div>
                 <% } %>
                 
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h2 class="card-title">Device Information</h2>
+                    </div>
+                    <p><strong>Registered Device ID:</strong> 
+                        <% if (user.registeredDeviceId) { %>
+                            <span class="text-success"><%= user.registeredDeviceId %></span>
+                        <% } else { %>
+                            <span class="text-muted">Not registered</span>
+                        <% } %>
+                    </p>
+                    <% if (user.registeredDeviceId) { %>
+                        <form action="/admin/users/reset-device/<%= user._id %>" method="POST">
+                            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                            <button type="submit" class="btn btn-warning" onclick="return confirm('Are you sure you want to reset the device registration for this user?')">
+                                Reset Device Registration
+                            </button>
+                        </form>
+                    <% } %>
+                </div>
+                
                 <form action="/admin/users/edit/<%= user._id %>" method="POST" data-validate>
                     <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                     <div class="form-group">

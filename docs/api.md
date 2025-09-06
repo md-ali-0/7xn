@@ -1,17 +1,25 @@
 # Desktop Application API Documentation
 
+## Overview
+This API provides authentication endpoints for desktop applications.
+Each user can only be logged in on one device at a time.
+When a user logs in for the first time, their device is registered.
+Subsequent logins must use the same device ID, or they will be rejected.
+
 ## Authentication Endpoints
 
 ### Login
 **POST** `/auth/api/login`
 
 Authenticate a user and receive a token for desktop application use.
+Each user can only be logged in on one device at a time.
 
 #### Request Body
 ```json
 {
   "email": "user@example.com",
-  "password": "userpassword"
+  "password": "userpassword",
+  "device_id": "unique_device_identifier"
 }
 ```
 
@@ -41,13 +49,13 @@ Authenticate a user and receive a token for desktop application use.
 #### Error Responses
 - 400: Validation failed
 - 401: Invalid email or password
-- 403: Account deactivated or package expired
+- 403: Account deactivated, package expired, or device mismatch
 - 500: Server error
 
-### Verify Token
-**POST** `/auth/api/verify-token`
+### Logout
+**POST** `/auth/api/logout`
 
-Verify if a token is still valid and get updated user information.
+Logout a user from the desktop application and invalidate their token.
 
 #### Request Body
 ```json
@@ -60,42 +68,33 @@ Verify if a token is still valid and get updated user information.
 ```json
 {
   "success": true,
-  "message": "Token is valid",
-  "user": {
-    "id": "user_id",
-    "username": "username",
-    "email": "user@example.com",
-    "role": "user",
-    "isActive": true,
-    "package": {
-      "id": "package_id",
-      "name": "Package Name",
-      "emailCredits": 1000,
-      "concurrencyLimit": 10
-    },
-    "packageEndDate": "2023-12-31T00:00:00.000Z"
-  }
+  "message": "Logout successful"
 }
 ```
 
 #### Error Responses
 - 400: Token is required
 - 401: Invalid or expired token
-- 403: Account deactivated or package expired
 - 500: Server error
+
+## Device Registration
+Each user is registered to a specific device on their first successful login.
+If a user attempts to log in from a different device, they will receive an error.
+To allow a user to log in from a different device, an administrator must reset their device registration
+through the admin panel.
 
 ## Usage Example
 
-1. Login to get a token:
+1. Login with device ID (first time):
 ```bash
 curl -X POST http://localhost:3000/auth/api/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"user@example.com","password":"password123"}'
+  -d '{"email":"user@example.com","password":"password123","device_id":"device-12345"}'
 ```
 
-2. Use the token to verify authentication:
+2. Logout:
 ```bash
-curl -X POST http://localhost:3000/auth/api/verify-token \
+curl -X POST http://localhost:3000/auth/api/logout \
   -H "Content-Type: application/json" \
   -d '{"token":"your_generated_token"}'
 ```

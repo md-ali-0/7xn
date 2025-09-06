@@ -91,6 +91,7 @@ router.get("/users", async (req, res) => {
       packageFilter: packageFilter,
       success: req.query.success || null,
       error: req.query.error || null,
+      csrfToken: res.locals.csrfToken
     })
   } catch (error) {
     console.error("Admin users error:", error)
@@ -472,10 +473,36 @@ router.post("/users/delete/:id", async (req, res) => {
   }
 })
 
+// Reset user device registration
+router.post("/users/reset-device/:id", async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id)
+
+    if (!user) {
+      return res.redirect("/admin/users?error=User not found")
+    }
+
+    // Reset the registered device ID
+    user.registeredDeviceId = null
+    await user.save()
+
+    res.redirect(`/admin/users?success=Device registration reset for user ${user.username}`)
+  } catch (error) {
+    console.error("Reset device error:", error)
+    res.redirect("/admin/users?error=An error occurred while resetting the device registration")
+  }
+})
+
 // Package management routes
 router.get("/packages", async (req, res) => {
   try {
-    const packages = await PackageModel.find().sort({ emailCredits: 1 })
+    const page = Number.parseInt(req.query.page) || 1
+    const limit = 10
+    const skip = (page - 1) * limit
+
+    const packages = await PackageModel.find().sort({ emailCredits: 1 }).skip(skip).limit(limit)
+    const totalPackages = await PackageModel.countDocuments()
+    const totalPages = Math.ceil(totalPackages / limit)
 
     // Get package statistics
     const stats = {
@@ -499,6 +526,13 @@ router.get("/packages", async (req, res) => {
       title: "Package Management",
       packages: packageStats,
       stats: stats,
+      currentPage: page,
+      totalPages: totalPages,
+      hasNextPage: page < totalPages,
+      hasPrevPage: page > 1,
+      nextPage: page + 1,
+      prevPage: page - 1,
+      totalPackages: totalPackages,
       success: req.query.success || null,
       error: req.query.error || null,
     })

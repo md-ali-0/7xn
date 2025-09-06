@@ -146,6 +146,14 @@ router.post(
 
 // Handle logout
 router.post("/logout", (req, res) => {
+  // Get the user ID from session if available
+  const userId = req.session.user ? req.session.user._id.toString() : null;
+  
+  // Remove device association if exists
+  if (userId && req.session.activeDevices && req.session.activeDevices[userId]) {
+    delete req.session.activeDevices[userId];
+  }
+  
   req.session.destroy((err) => {
     if (err) {
       console.error("Logout error:", err)
@@ -162,6 +170,7 @@ router.post(
   [
     body("email").isEmail().normalizeEmail().withMessage("Please enter a valid email address"),
     body("password").notEmpty().withMessage("Password is required"),
+    body("device_id").notEmpty().withMessage("Device ID is required"),
   ],
   async (req, res) => {
     try {
@@ -175,7 +184,7 @@ router.post(
         })
       }
 
-      const { email, password } = req.body
+      const { email, password, device_id } = req.body
 
       // Find user by email
       const user = await User.findOne({ email }).populate("package")
@@ -213,6 +222,21 @@ router.post(
         })
       }
 
+      // Check if user has a registered device
+      if (user.registeredDeviceId) {
+        // If user has a registered device, check if it matches the provided device_id
+        if (user.registeredDeviceId !== device_id) {
+          return res.status(403).json({
+            success: false,
+            message: "This account is registered to a different device. Please use your registered device or contact support to reset your device."
+          })
+        }
+      } else {
+        // If user doesn't have a registered device, save the current device_id
+        user.registeredDeviceId = device_id
+        await user.save()
+      }
+
       // Update last login
       user.lastLogin = new Date()
       await user.save()
@@ -225,6 +249,7 @@ router.post(
       req.session.desktopTokens = req.session.desktopTokens || {}
       req.session.desktopTokens[token] = {
         userId: user._id,
+        deviceId: device_id,
         createdAt: new Date()
       }
 
@@ -305,6 +330,21 @@ router.post("/api/verify-token", async (req, res) => {
       })
     }
 
+    // Check if the user is still logged in on the same device
+    if (!req.session.activeDevices) {
+      req.session.activeDevices = {}
+    }
+
+    const userId = user._id.toString()
+    if (req.session.activeDevices[userId] !== tokenData.deviceId) {
+      // User has logged in on a different device, invalidate this token
+      delete req.session.desktopTokens[token]
+      return res.status(401).json({
+        success: false,
+        message: "Session invalidated. User logged in on a different device."
+      })
+    }
+
     // Return user data
     res.json({
       success: true,
@@ -329,6 +369,51 @@ router.post("/api/verify-token", async (req, res) => {
     res.status(500).json({
       success: false,
       message: "An error occurred during token verification. Please try again."
+    })
+  }
+})
+
+// API endpoint for desktop application logout
+router.post("/api/logout", async (req, res) => {
+  try {
+    const { token } = req.body
+
+    if (!token) {
+      return res.status(400).json({
+        success: false,
+        message: "Token is required"
+      })
+    }
+
+    // Check if token exists in session
+    if (req.session.desktopTokens && req.session.desktopTokens[token]) {
+      // Get user from token
+      const tokenData = req.session.desktopTokens[token]
+      const userId = tokenData.userId.toString()
+      
+      // Remove device association
+      if (req.session.activeDevices && req.session.activeDevices[userId]) {
+        delete req.session.activeDevices[userId];
+      }
+      
+      // Remove token
+      delete req.session.desktopTokens[token]
+      
+      return res.json({
+        success: true,
+        message: "Logout successful"
+      })
+    }
+
+    res.status(401).json({
+      success: false,
+      message: "Invalid or expired token"
+    })
+  } catch (error) {
+    console.error("Desktop logout error:", error)
+    res.status(500).json({
+      success: false,
+      message: "An error occurred during logout. Please try again."
     })
   }
 })

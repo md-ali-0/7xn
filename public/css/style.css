@@ -183,6 +183,154 @@ body {
   background-color: #f8f9fa;
 }
 
+/* Responsive table */
+.table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: 1rem;
+}
+
+.table-responsive .table {
+  min-width: 800px;
+}
+
+@media (max-width: 768px) {
+  .table-responsive {
+    margin-left: -20px;
+    margin-right: -20px;
+  }
+  
+  .table-responsive .table {
+    border-radius: 0;
+    min-width: 100%;
+  }
+  
+  .table th,
+  .table td {
+    padding: 0.75rem 0.5rem;
+    font-size: 0.875rem;
+  }
+  
+  /* Stack table cells on mobile for better readability */
+  .table-stacked {
+    display: block;
+  }
+  
+  .table-stacked thead {
+    display: none;
+  }
+  
+  .table-stacked tbody {
+    display: block;
+  }
+  
+  .table-stacked tr {
+    display: block;
+    margin-bottom: 1rem;
+    padding: 1rem;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    background: #fff;
+  }
+  
+  .table-stacked td {
+    display: block;
+    text-align: right;
+    padding: 0.75rem 0.5rem;
+    border-bottom: 1px solid #eee;
+    position: relative;
+    padding-left: 40%;
+  }
+  
+  .table-stacked td:last-child {
+    border-bottom: none;
+  }
+  
+  .table-stacked td:before {
+    content: attr(data-label) ": ";
+    float: left;
+    font-weight: bold;
+    color: #495057;
+    position: absolute;
+    left: 0.5rem;
+    top: 0.75rem;
+    width: 35%;
+    text-align: left;
+  }
+  
+  /* Style for table header labels in stacked view */
+  .table-stacked th:before {
+    font-weight: bold;
+    color: #495057;
+  }
+  
+  /* Adjust button sizes for mobile */
+  .btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+  }
+  
+  .pagination-btn {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.8rem;
+    min-width: 35px;
+  }
+  
+  /* Adjust form elements for mobile */
+  .form-input,
+  .form-select {
+    padding: 0.5rem;
+    font-size: 1rem;
+  }
+  
+  /* Adjust card padding for mobile */
+  .card {
+    padding: 1rem;
+  }
+  
+  /* Adjust dashboard grid for mobile */
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  /* Adjust flex layouts for mobile */
+  .d-flex {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .justify-between {
+    justify-content: center;
+  }
+  
+  .align-center {
+    align-items: flex-start;
+  }
+  
+  .gap-2 {
+    gap: 0.5rem;
+  }
+}
+
+/* Extra small devices (phones, less than 480px) */
+@media (max-width: 480px) {
+  .table-stacked td {
+    padding: 0.75rem 0.5rem 0.75rem 35%;
+  }
+  
+  .table-stacked td:before {
+    width: 30%;
+    font-size: 0.8rem;
+  }
+  
+  .pagination-btn {
+    padding: 0.3rem 0.5rem;
+    font-size: 0.75rem;
+    min-width: 30px;
+  }
+}
+
 /* Cards */
 .card {
   background: #fff;
@@ -190,6 +338,12 @@ body {
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   padding: 1.5rem;
   margin-bottom: 1rem;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
 }
 
 .card-header {
@@ -233,7 +387,7 @@ body {
 .dashboard-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 1rem;
+  gap: 1.5rem;
   margin-bottom: 2rem;
 }
 
@@ -243,6 +397,12 @@ body {
   padding: 1.5rem;
   border-radius: 8px;
   text-align: center;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
 }
 
 .stat-number {
@@ -288,6 +448,24 @@ body {
 
   .dashboard-grid {
     grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .d-flex {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .justify-between {
+    justify-content: center;
+  }
+  
+  .align-center {
+    align-items: flex-start;
+  }
+  
+  .gap-2 {
+    gap: 0.5rem;
   }
 }
 
@@ -322,6 +500,9 @@ body {
 .justify-between {
   justify-content: space-between;
 }
+.justify-center {
+  justify-content: center;
+}
 .align-center {
   align-items: center;
 }
@@ -330,4 +511,120 @@ body {
 }
 .gap-2 {
   gap: 1rem;
+}
+
+/* Enhanced form styling */
+.form-container h1 {
+  color: #333;
+  margin-bottom: 1.5rem;
+}
+
+.form-group .form-label {
+  font-weight: 600;
+}
+
+/* Button enhancements */
+.btn {
+  font-weight: 500;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
+/* Text colors */
+.text-success {
+  color: #28a745;
+}
+
+.text-danger {
+  color: #dc3545;
+}
+
+.text-warning {
+  color: #ffc107;
+}
+
+.text-primary {
+  color: #007bff;
+}
+
+/* Animation for cards */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.card {
+  animation: fadeInUp 0.3s ease forwards;
+}
+
+/* Improved dashboard grid */
+.dashboard-grid {
+  animation: fadeInUp 0.3s ease forwards;
+}
+
+/* Pagination styles */
+.pagination-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.pagination-info {
+  font-size: 0.9rem;
+  color: #6c757d;
+}
+
+.pagination-controls {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.pagination-btn {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
+  min-width: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pagination-btn.active {
+  background-color: #0056b3;
+  color: white;
+}
+
+/* Mobile pagination */
+@media (max-width: 768px) {
+  .pagination-container {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .pagination-controls {
+    justify-content: center;
+  }
+  
+  .pagination-btn {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.8rem;
+    min-width: 35px;
+  }
 }

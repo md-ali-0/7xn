@@ -24,7 +24,11 @@
                 <% } else { %>
                     <div class="card" style="max-width: 600px; margin: 2rem auto;">
                         <h2>Welcome back, <%= currentUser.username %>!</h2>
-                        <p>You are logged in with <strong><%= currentUser.package.name %></strong> package.</p>
+                        <% if (currentUser.package) { %>
+                            <p>You are logged in with <strong><%= currentUser.package.name %></strong> package.</p>
+                        <% } else { %>
+                            <p>You are logged in as an administrator.</p>
+                        <% } %>
                         <a href="/dashboard" class="btn btn-primary">Go to Dashboard</a>
                     </div>
                 <% } %>
