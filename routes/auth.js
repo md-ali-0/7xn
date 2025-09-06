@@ -166,9 +166,9 @@ router.post("/logout", (req, res) => {
 
 // API endpoint for desktop application login
 router.post(
-  "/x/login",
+  "/api/login",
   [
-    body("email").isEmail().normalizeEmail().withMessage("Please enter a valid email address"),
+    body("username").notEmpty().withMessage("Username is required"),
     body("password").notEmpty().withMessage("Password is required"),
     body("device_id").notEmpty().withMessage("Device ID is required"),
   ],
@@ -184,15 +184,15 @@ router.post(
         })
       }
 
-      const { email, password, device_id } = req.body
+      const { username, password, device_id } = req.body
 
-      // Find user by email
-      const user = await User.findOne({ email }).populate("package")
+      // Find user by username
+      const user = await User.findOne({ username }).populate("package")
 
       if (!user) {
         return res.status(401).json({
           success: false,
-          message: "Invalid email or password"
+          message: "Invalid username or password"
         })
       }
 
@@ -218,7 +218,7 @@ router.post(
       if (!isMatch) {
         return res.status(401).json({
           success: false,
-          message: "Invalid email or password"
+          message: "Invalid username or password"
         })
       }
 

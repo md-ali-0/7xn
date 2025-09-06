@@ -17,7 +17,7 @@ Each user can only be logged in on one device at a time.
 #### Request Body
 ```json
 {
-  "email": "user@example.com",
+  "username": "username",
   "password": "userpassword",
   "device_id": "unique_device_identifier"
 }
@@ -48,7 +48,7 @@ Each user can only be logged in on one device at a time.
 
 #### Error Responses
 - 400: Validation failed
-- 401: Invalid email or password
+- 401: Invalid username or password
 - 403: Account deactivated, package expired, or device mismatch
 - 500: Server error
 
@@ -85,11 +85,11 @@ through the admin panel.
 
 ## Usage Example
 
-1. Login with device ID (first time):
+1. Login with username and device ID (first time):
 ```bash
 curl -X POST http://localhost:3000/auth/api/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"user@example.com","password":"password123","device_id":"device-12345"}'
+  -d '{"username":"user123","password":"password123","device_id":"device-12345"}'
 ```
 
 2. Logout:
