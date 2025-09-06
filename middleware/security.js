@@ -130,6 +130,11 @@ const sessionSecurity = (req, res, next) => {
 
 // CSRF protection middleware (simple implementation)
 const csrfProtection = (req, res, next) => {
+  // Skip CSRF protection for API routes
+  if (req.path.startsWith('/auth/api/')) {
+    return next();
+  }
+  
   // Generate CSRF token for all requests (not just GET)
   if (!req.session.csrfToken) {
     req.session.csrfToken = require("crypto").randomBytes(32).toString("hex")

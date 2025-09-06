@@ -14,6 +14,9 @@ Subsequent logins must use the same device ID, or they will be rejected.
 Authenticate a user and receive a token for desktop application use.
 Each user can only be logged in on one device at a time.
 
+#### Request Headers
+- Content-Type: application/json
+
 #### Request Body
 ```json
 {
@@ -47,7 +50,7 @@ Each user can only be logged in on one device at a time.
 ```
 
 #### Error Responses
-- 400: Validation failed
+- 400: Validation failed or missing required fields
 - 401: Invalid username or password
 - 403: Account deactivated, package expired, or device mismatch
 - 500: Server error
@@ -82,6 +85,28 @@ Each user is registered to a specific device on their first successful login.
 If a user attempts to log in from a different device, they will receive an error.
 To allow a user to log in from a different device, an administrator must reset their device registration
 through the admin panel.
+
+## Testing with Postman
+
+To test the API endpoints with Postman:
+
+1. Set the request method to POST
+2. Enter the URL: `http://localhost:3000/auth/api/login`
+3. Go to the "Headers" tab and add:
+   - Key: `Content-Type`
+   - Value: `application/json`
+4. Go to the "Body" tab:
+   - Select "raw"
+   - Select "JSON" from the dropdown
+   - Enter the JSON payload:
+   ```json
+   {
+     "username": "testuser",
+     "password": "testpassword",
+     "device_id": "device123"
+   }
+   ```
+5. Click "Send"
 
 ## Usage Example
 

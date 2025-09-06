@@ -35,7 +35,7 @@ A comprehensive Node.js authentication server built with Express, EJS, and Mongo
    ```
    
    Edit the `.env` file with your configuration:
-   - `MONGODB_URI`: Your MongoDB connection string
+   - `MONGODB_URI`: Your MongoDB connection string (must start with mongodb:// or mongodb+srv://)
    - `SESSION_SECRET`: A secure secret for session encryption
 
 ## Running the Application
@@ -45,21 +45,26 @@ A comprehensive Node.js authentication server built with Express, EJS, and Mongo
 npm run dev
 ```
 
-### Production
+### Testing API Endpoints
+
+To test the desktop application API endpoints:
+
+1. Start the server:
+   ```bash
+   npm start
+   ```
+
+2. Use Postman or curl to test the endpoints:
+   - **Login**: POST `http://localhost:3000/auth/api/login`
+   - Make sure to set the Content-Type header to `application/json`
+   - Send JSON body with `username`, `password`, and `device_id`
+
+Example curl command:
 ```bash
-npm start
+curl -X POST http://localhost:3000/auth/api/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"testuser","password":"testpass","device_id":"device123"}'
 ```
-
-## Deployment to Vercel
-
-1. Create a new project on Vercel
-2. Connect your GitHub repository
-3. Set the following environment variables in Vercel:
-   - `MONGODB_URI`: Your MongoDB connection string (you can use MongoDB Atlas for a cloud database)
-   - `SESSION_SECRET`: A strong, random secret key for session encryption
-4. Deploy the project
-
-The application will be available at your Vercel URL.
 
 ## Environment Variables
 
@@ -67,14 +72,47 @@ You must set the following environment variables in your Vercel project settings
 
 | Variable | Description | Example |
 |----------|-------------|---------|
-| MONGODB_URI | MongoDB connection string | mongodb+srv://user:pass@cluster.mongodb.net/db |
-| SESSION_SECRET | Secret key for session encryption | a-very-long-random-string |
+| MONGODB_URI | MongoDB connection string (must start with mongodb:// or mongodb+srv://) | mongodb+srv://username:password@cluster.mongodb.net/database |
+| SESSION_SECRET | Secret key for session encryption (at least 32 characters) | a-very-long-random-string |
 
 To set these in Vercel:
 1. Go to your project in the Vercel dashboard
 2. Click on "Settings" → "Environment Variables"
 3. Add each variable with its value
 4. Redeploy your application
+
+## MongoDB Connection String Format
+
+The MONGODB_URI must be a valid MongoDB connection string:
+
+### For MongoDB Atlas (Cloud):
+```
+mongodb+srv://<username>:<password>@<cluster-url>/<database-name>?retryWrites=true&w=majority
+```
+
+### For Local MongoDB:
+```
+mongodb://localhost:27017/<database-name>
+```
+
+### For MongoDB with Authentication:
+```
+mongodb://<username>:<password>@<host>:<port>/<database-name>
+```
+
+Important notes:
+- The connection string must start with either `mongodb://` or `mongodb+srv://`
+- Replace `<username>`, `<password>`, `<cluster-url>`, and `<database-name>` with your actual values
+- For MongoDB Atlas, make sure your IP address is whitelisted in the Atlas dashboard
+
+## API Endpoints
+
+### Desktop Application Authentication
+- **Login**: POST `/auth/api/login`
+- **Verify Token**: POST `/auth/api/verify-token`
+- **Logout**: POST `/auth/api/logout`
+
+See [docs/api.md](docs/api.md) for detailed API documentation.
 
 ## Serverless Deployment Considerations
 
@@ -87,10 +125,6 @@ When deploying to Vercel's serverless environment:
 3. **Environment Detection**: The application automatically detects when it's running in a serverless environment and adjusts its behavior accordingly.
 
 4. **Performance**: Serverless functions have execution time limits. The application is designed to be efficient within these constraints.
-
-## API Documentation
-
-See [docs/api.md](docs/api.md) for detailed API documentation.
 
 ## Security Features
 

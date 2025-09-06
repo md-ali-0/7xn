@@ -185,7 +185,7 @@ router.post(
       }
 
       const { username, password, device_id } = req.body
-
+      
       // Find user by username
       const user = await User.findOne({ username }).populate("package")
 

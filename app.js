@@ -199,6 +199,21 @@ app.use((err, req, res, next) => {
   // Log error details
   console.error(`[ERROR] ${err.stack}`)
 
+  // Handle JSON parsing errors specifically
+  if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+    console.log('JSON Parsing Error: Invalid JSON format in request body');
+    console.log('Make sure all string values in your JSON are enclosed in double quotes');
+    return res.status(400).json({
+      success: false,
+      message: "Invalid JSON format. Make sure all string values are enclosed in double quotes.",
+      example: {
+        username: "your_username",
+        password: "your_password",
+        device_id: "your_device_id"
+      }
+    });
+  }
+
   // Log security-related errors
   if (err.status === 403 || err.status === 401) {
     const { securityLogger } = require("./middleware/monitoring")
