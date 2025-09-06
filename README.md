@@ -76,6 +76,18 @@ To set these in Vercel:
 3. Add each variable with its value
 4. Redeploy your application
 
+## Serverless Deployment Considerations
+
+When deploying to Vercel's serverless environment:
+
+1. **File System Access**: The application cannot write to the file system. All logging functionality that writes to files is automatically disabled in serverless environments.
+
+2. **Persistent Storage**: All data must be stored in MongoDB or other external services. The application uses MongoDB for all persistent storage needs.
+
+3. **Environment Detection**: The application automatically detects when it's running in a serverless environment and adjusts its behavior accordingly.
+
+4. **Performance**: Serverless functions have execution time limits. The application is designed to be efficient within these constraints.
+
 ## API Documentation
 
 See [docs/api.md](docs/api.md) for detailed API documentation.

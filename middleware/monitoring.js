@@ -1,10 +1,20 @@
 const fs = require("fs")
 const path = require("path")
 
-// Create logs directory if it doesn't exist
-const logsDir = path.join(__dirname, "../logs")
-if (!fs.existsSync(logsDir)) {
-  fs.mkdirSync(logsDir, { recursive: true })
+// Check if we're in a serverless environment (Vercel)
+const isServerless = process.env.NOW_REGION || process.env.VERCEL_ENV
+
+// Only create logs directory if we're not in a serverless environment
+let logsDir = null
+if (!isServerless) {
+  logsDir = path.join(__dirname, "../logs")
+  if (!fs.existsSync(logsDir)) {
+    try {
+      fs.mkdirSync(logsDir, { recursive: true })
+    } catch (error) {
+      console.warn("Could not create logs directory:", error.message)
+    }
+  }
 }
 
 // Security event logging
@@ -20,8 +30,15 @@ const securityLogger = {
       reason: reason,
     }
 
-    const logFile = path.join(logsDir, "security.log")
-    fs.appendFileSync(logFile, JSON.stringify(logEntry) + "\n")
+    // Only write to file if we're not in a serverless environment
+    if (logsDir) {
+      try {
+        const logFile = path.join(logsDir, "security.log")
+        fs.appendFileSync(logFile, JSON.stringify(logEntry) + "\n")
+      } catch (error) {
+        console.warn("Could not write to security log:", error.message)
+      }
+    }
 
     if (!success) {
       console.warn(`[SECURITY] Failed login attempt: ${req.body.email} from ${req.ip} - ${reason}`)
@@ -39,8 +56,15 @@ const securityLogger = {
       userAgent: req.get("User-Agent"),
     }
 
-    const logFile = path.join(logsDir, "admin.log")
-    fs.appendFileSync(logFile, JSON.stringify(logEntry) + "\n")
+    // Only write to file if we're not in a serverless environment
+    if (logsDir) {
+      try {
+        const logFile = path.join(logsDir, "admin.log")
+        fs.appendFileSync(logFile, JSON.stringify(logEntry) + "\n")
+      } catch (error) {
+        console.warn("Could not write to admin log:", error.message)
+      }
+    }
 
     console.log(`[ADMIN] ${req.session.user?.username} performed ${action} on ${target || "system"}`)
   },
@@ -55,8 +79,15 @@ const securityLogger = {
       userAgent: req.get("User-Agent"),
     }
 
-    const logFile = path.join(logsDir, "security.log")
-    fs.appendFileSync(logFile, JSON.stringify(logEntry) + "\n")
+    // Only write to file if we're not in a serverless environment
+    if (logsDir) {
+      try {
+        const logFile = path.join(logsDir, "security.log")
+        fs.appendFileSync(logFile, JSON.stringify(logEntry) + "\n")
+      } catch (error) {
+        console.warn("Could not write to security log:", error.message)
+      }
+    }
 
     console.warn(`[SECURITY] ${event}: ${details || "No details"} from ${req.ip}`)
   },
@@ -77,11 +108,15 @@ const performanceMonitor = (req, res, next) => {
       ip: req.ip,
     }
 
-    // Log slow requests (> 1 second)
-    if (duration > 1000) {
+    // Log slow requests (> 1 second) only if we're not in a serverless environment
+    if (duration > 1000 && logsDir) {
       console.warn(`[PERFORMANCE] Slow request: ${req.method} ${req.url} - ${duration}ms`)
-      const logFile = path.join(logsDir, "performance.log")
-      fs.appendFileSync(logFile, JSON.stringify(logEntry) + "\n")
+      try {
+        const logFile = path.join(logsDir, "performance.log")
+        fs.appendFileSync(logFile, JSON.stringify(logEntry) + "\n")
+      } catch (error) {
+        console.warn("Could not write to performance log:", error.message)
+      }
     }
   })
 
@@ -108,19 +143,28 @@ const healthCheck = {
   },
 
   logSystemStats: () => {
-    const stats = healthCheck.getSystemStats()
-    const logFile = path.join(logsDir, "system.log")
-    fs.appendFileSync(logFile, JSON.stringify(stats) + "\n")
+    // Only log system stats if we're not in a serverless environment
+    if (logsDir) {
+      try {
+        const stats = healthCheck.getSystemStats()
+        const logFile = path.join(logsDir, "system.log")
+        fs.appendFileSync(logFile, JSON.stringify(stats) + "\n")
+      } catch (error) {
+        console.warn("Could not write to system log:", error.message)
+      }
+    }
   },
 }
 
-// Log system stats every hour
-setInterval(
-  () => {
-    healthCheck.logSystemStats()
-  },
-  60 * 60 * 1000,
-)
+// Log system stats every hour (only if we're not in a serverless environment)
+if (!isServerless) {
+  setInterval(
+    () => {
+      healthCheck.logSystemStats()
+    },
+    60 * 60 * 1000,
+  )
+}
 
 module.exports = {
   securityLogger,
