@@ -166,7 +166,7 @@ router.post("/logout", (req, res) => {
 
 // API endpoint for desktop application login
 router.post(
-  "/api/login",
+  "/x/login",
   [
     body("email").isEmail().normalizeEmail().withMessage("Please enter a valid email address"),
     body("password").notEmpty().withMessage("Password is required"),
