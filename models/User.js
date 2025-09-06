@@ -1,0 +1,179 @@
+const mongoose = require("mongoose")
+const bcrypt = require("bcryptjs")
+
+const userSchema = new mongoose.Schema(
+  {
+    username: {
+      type: String,
+      required: [true, "Username is required"],
+      unique: true,
+      trim: true,
+      minlength: [3, "Username must be at least 3 characters"],
+      maxlength: [20, "Username cannot exceed 20 characters"],
+      match: [/^[a-zA-Z0-9_]+$/, "Username can only contain letters, numbers, and underscores"],
+    },
+    email: {
+      type: String,
+      required: [true, "Email is required"],
+      unique: true,
+      trim: true,
+      lowercase: true,
+      match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, "Please enter a valid email address"],
+    },
+    password: {
+      type: String,
+      required: [true, "Password is required"],
+      minlength: [6, "Password must be at least 6 characters"],
+    },
+    role: {
+      type: String,
+      enum: ["user", "admin"],
+      default: "user",
+    },
+    package: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Package",
+      // Make package optional for admin users
+      required: function() {
+        return this.role !== "admin";
+      },
+    },
+    packageStartDate: {
+      type: Date,
+      default: Date.now,
+    },
+    packageEndDate: {
+      type: Date,
+      // Make packageEndDate optional for admin users
+      required: function() {
+        return this.role !== "admin";
+      },
+    },
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
+    lastLogin: {
+      type: Date,
+    },
+    emailVerified: {
+      type: Boolean,
+      default: false,
+    },
+    resetPasswordToken: {
+      type: String,
+    },
+    resetPasswordExpires: {
+      type: Date,
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now,
+    },
+  },
+  {
+    timestamps: true,
+  },
+)
+
+// Indexes for better query performance (only non-unique fields to avoid duplicates)
+userSchema.index({ role: 1 })
+userSchema.index({ isActive: 1 })
+userSchema.index({ packageEndDate: 1 })
+
+// Pre-save hook to hash password
+userSchema.pre("save", async function (next) {
+  // Only hash the password if it has been modified (or is new)
+  if (!this.isModified("password")) return next()
+
+  try {
+    // Hash password with cost of 12
+    const salt = await bcrypt.genSalt(12)
+    this.password = await bcrypt.hash(this.password, salt)
+    next()
+  } catch (error) {
+    next(error)
+  }
+})
+
+// Instance method to check password
+userSchema.methods.comparePassword = async function (candidatePassword) {
+  try {
+    return await bcrypt.compare(candidatePassword, this.password)
+  } catch (error) {
+    throw new Error("Password comparison failed")
+  }
+}
+
+// Instance method to check if user's package is valid
+userSchema.methods.isPackageValid = function () {
+  const now = new Date()
+  return this.isActive && this.packageEndDate > now
+}
+
+// Instance method to check if user is admin
+userSchema.methods.isAdmin = function () {
+  return this.role === "admin"
+}
+
+// Instance method to get days until package expires
+userSchema.methods.getDaysUntilExpiry = function () {
+  const now = new Date()
+  const diffTime = this.packageEndDate - now
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+}
+
+// Static method to find users with expiring packages
+userSchema.statics.findExpiringPackages = function (days = 7) {
+  const futureDate = new Date()
+  futureDate.setDate(futureDate.getDate() + days)
+
+  return this.find({
+    isActive: true,
+    packageEndDate: { $lte: futureDate, $gte: new Date() },
+  }).populate("package")
+}
+
+// Static method to find expired users
+userSchema.statics.findExpiredUsers = function () {
+  return this.find({
+    packageEndDate: { $lt: new Date() },
+  }).populate("package")
+}
+
+// Static method to create admin user if none exists
+userSchema.statics.createDefaultAdmin = async function () {
+  try {
+    const adminExists = await this.findOne({ role: "admin" })
+
+    if (!adminExists) {
+      const adminUser = new this({
+        username: "admin",
+        email: "admin@example.com",
+        password: "admin123", // This will be hashed by the pre-save hook
+        role: "admin",
+        isActive: true,
+        emailVerified: true,
+      })
+
+      await adminUser.save()
+      console.log("Default admin user created: admin@example.com / admin123")
+    }
+  } catch (error) {
+    console.error("Error creating default admin:", error)
+  }
+}
+
+// Virtual for user's full package info
+userSchema.virtual("packageInfo", {
+  ref: "Package",
+  localField: "package",
+  foreignField: "_id",
+  justOne: true,
+})
+
+// Ensure virtual fields are serialized
+userSchema.set("toJSON", { virtuals: true })
+userSchema.set("toObject", { virtuals: true })
+
+module.exports = mongoose.model("User", userSchema)

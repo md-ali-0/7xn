@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> - Gmail Checker Auth</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <%- include('partials/header') %>
+    
+    <main class="main-content">
+        <div class="container">
+            <div class="text-center">
+                <h1>Welcome to Gmail Checker</h1>
+                <p class="mb-3">Secure authentication system for email validation services</p>
+                
+                <% if (!isAuthenticated) { %>
+                    <div class="card" style="max-width: 600px; margin: 2rem auto;">
+                        <h2>Get Started</h2>
+                        <p>Access your email validation dashboard with secure authentication and package management.</p>
+                        <a href="/auth/login" class="btn btn-primary">Login to Dashboard</a>
+                    </div>
+                <% } else { %>
+                    <div class="card" style="max-width: 600px; margin: 2rem auto;">
+                        <h2>Welcome back, <%= currentUser.username %>!</h2>
+                        <p>You are logged in with <strong><%= currentUser.package.name %></strong> package.</p>
+                        <a href="/dashboard" class="btn btn-primary">Go to Dashboard</a>
+                    </div>
+                <% } %>
+                
+                <div class="dashboard-grid" style="margin-top: 3rem;">
+                    <div class="card">
+                        <h3>Email Validation</h3>
+                        <p>Validate email addresses with high accuracy and real-time verification.</p>
+                    </div>
+                    <div class="card">
+                        <h3>Package Management</h3>
+                        <p>Flexible packages with different credit limits and concurrency options.</p>
+                    </div>
+                    <div class="card">
+                        <h3>Secure Access</h3>
+                        <p>Enterprise-grade security with session management and user authentication.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <%- include('partials/footer') %>
+    
+    <script src="/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> - Gmail Checker Auth</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <%- include('partials/header') %>
+    
+    <main class="main-content">
+        <div class="container">
+            <div class="text-center">
+                <div class="card" style="max-width: 600px; margin: 2rem auto;">
+                    <h1 style="color: #dc3545; font-size: 3rem; margin-bottom: 1rem;">
+                        <%= error.status || 500 %>
+                    </h1>
+                    <h2 style="margin-bottom: 1rem;"><%= title %></h2>
+                    <p style="font-size: 1.1rem; margin-bottom: 2rem;">
+                        <%= error.message || 'An unexpected error occurred.' %>
+                    </p>
+                    
+                    <div class="d-flex gap-2 justify-center">
+                        <a href="/" class="btn btn-primary">Go Home</a>
+                        <% if (isAuthenticated) { %>
+                            <a href="/dashboard" class="btn btn-secondary">Dashboard</a>
+                        <% } else { %>
+                            <a href="/auth/login" class="btn btn-secondary">Login</a>
+                        <% } %>
+                    </div>
+                </div>
+                
+                <% if (process.env.NODE_ENV !== 'production' && error.stack) { %>
+                    <div class="card" style="max-width: 800px; margin: 2rem auto; text-align: left;">
+                        <h3>Stack Trace (Development Only)</h3>
+                        <pre style="background: #f8f9fa; padding: 1rem; border-radius: 4px; overflow-x: auto; font-size: 0.875rem;"><%= error.stack %></pre>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+    </main>
+    
+    <%- include('partials/footer') %>
+    
+    <script src="/js/main.js"></script>
+</body>
+</html>

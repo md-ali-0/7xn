@@ -1,0 +1,335 @@
+# Node.js Authentication Server Prompt
+
+## Project Overview
+Create a complete authentication server using Node.js, Express, EJS templating engine, and MongoDB for user management. This server will handle user registration, login, session management, and protected routes for the Gmail Checker application. The admin will manually create users and assign packages through a dashboard. Users will receive validity dates and active status when logging in.
+
+## Technology Stack
+- Node.js (latest LTS version)
+- Express.js web framework
+- EJS templating engine for server-side rendering
+- MongoDB as the database with Mongoose ODM
+- bcryptjs for password hashing
+- express-session for session management
+- connect-mongo for MongoDB session store
+- dotenv for environment variable management
+- express-validator for input validation
+- nodemon for development
+
+## Project Structure
+```
+auth-server/
+├── public/
+│   ├── css/
+│   │   └── style.css
+│   └── js/
+│       └── main.js
+├── views/
+│   ├── partials/
+│   │   ├── header.ejs
+│   │   └── footer.ejs
+│   ├── layouts/
+│   │   └── main.ejs
+│   ├── index.ejs
+│   ├── login.ejs
+│   ├── register.ejs
+│   ├── dashboard.ejs
+│   ├── admin/
+│   │   ├── users.ejs
+│   │   ├── create-user.ejs
+│   │   └── edit-user.ejs
+│   └── error.ejs
+├── routes/
+│   ├── auth.js
+│   ├── dashboard.js
+│   └── admin.js
+├── middleware/
+│   └── auth.js
+├── models/
+│   ├── User.js
+│   └── Package.js
+├── config/
+│   └── db.js
+├── .env
+├── .gitignore
+├── app.js
+├── package.json
+└── README.md
+```
+
+## Database Schema
+
+### User Model
+- _id: MongoDB ObjectId (auto-generated)
+- username: String (unique, required, 3-20 characters)
+- email: String (unique, required, valid email format)
+- password: String (required, min 6 characters, hashed)
+- role: String (default: 'user', enum: ['user', 'admin'])
+- package: ObjectId (reference to Package model)
+- packageStartDate: Date (when the current package started)
+- packageEndDate: Date (when the current package expires)
+- isActive: Boolean (default: true)
+- createdAt: Date (default: current date)
+- lastLogin: Date (optional)
+- emailVerified: Boolean (default: false)
+- resetPasswordToken: String (optional)
+- resetPasswordExpires: Date (optional)
+
+### Package Model
+- _id: MongoDB ObjectId (auto-generated)
+- name: String (unique, required, e.g., "Free", "Premium", "Enterprise")
+- emailCredits: Number (email validation credits per month, required)
+- concurrencyLimit: Number (max concurrent validations, required)
+- features: [String] (list of features included in package)
+- isActive: Boolean (default: true)
+- createdAt: Date (default: current date)
+
+## Core Features
+
+### 1. Admin Login
+- Form with email and password fields
+- Server-side validation
+- Check if user exists in database
+- Password comparison with bcryptjs
+- Verify user is active and package is not expired
+- Session creation on successful authentication
+- Update lastLogin timestamp
+- Redirect to dashboard on successful login
+- Proper error handling for invalid credentials, inactive users, or expired packages
+
+### 2. Session Management
+- Secure session handling with express-session
+- MongoDB session store using connect-mongo
+- Session timeout configuration (30 minutes of inactivity)
+- Session regeneration to prevent fixation attacks
+- Proper session destruction on logout
+
+### 3. Authentication Middleware
+- Protect routes that require authentication
+- Redirect unauthenticated users to login page
+- Add user object to response locals for template access
+- Check if user is active and package is valid
+
+### 5. Admin Dashboard
+- Protected route accessible only to admin users
+- List all users with their packages and validity dates
+- Create new users with assigned packages
+- Edit existing users (update package, validity dates, active status)
+- Delete users
+- Manage packages (create, edit, delete packages)
+
+### 6. Package System
+- Three default packages:
+  - Free: 100 email credits/month, 5 concurrency limit
+  - Premium: 1000 email credits/month, 20 concurrency limit
+  - Enterprise: 10000 email credits/month, 50 concurrency limit
+- Admin can assign any package to users
+- Admin can set custom validity dates for packages
+- Automatic checking of package expiration
+
+### 7. Security Features
+- Environment variables for sensitive data (database URI, session secret)
+- Input sanitization and validation
+- Password strength requirements
+- CSRF protection
+- Helmet.js for HTTP headers security
+- Rate limiting for authentication endpoints
+- XSS prevention
+- CORS configuration
+
+### 8. Error Handling
+- Custom error pages (404, 500)
+- Proper error messages without exposing sensitive information
+- Logging of authentication attempts (successful and failed)
+
+## API Endpoints
+
+### Authentication Routes (/auth)
+- GET /auth/login - Login form
+- POST /auth/login - Handle login
+- POST /auth/logout - Handle logout
+- GET /auth/logout - Redirect to login
+
+### Dashboard Routes (/dashboard)
+- GET /dashboard - Admin dashboard (protected, admin only)
+
+### Admin Routes (/admin)
+- GET /admin/users - List all users
+- GET /admin/users/create - Create user form
+- POST /admin/users/create - Handle user creation
+- GET /admin/users/edit/:id - Edit user form
+- POST /admin/users/edit/:id - Handle user update
+- POST /admin/users/delete/:id - Delete user
+- GET /admin/packages - List all packages
+- GET /admin/packages/create - Create package form
+- POST /admin/packages/create - Handle package creation
+- GET /admin/packages/edit/:id - Edit package form
+- POST /admin/packages/edit/:id - Handle package update
+- POST /admin/packages/delete/:id - Delete package
+
+## Views
+
+### Layout (main.ejs)
+- HTML5 boilerplate
+- Header with navigation (conditional based on auth status and role)
+- Main content block
+- Footer
+- CSS and JS includes
+
+### Partials
+- header.ejs: Navigation bar with login/logout links and admin links
+- footer.ejs: Copyright information and links
+
+### Pages
+- index.ejs: Landing page with link to login
+- login.ejs: Login form with email/password fields
+- dashboard.ejs: User dashboard showing user info, package details, and validity dates
+- admin/users.ejs: Admin user management page
+- admin/create-user.ejs: Admin user creation form
+- admin/edit-user.ejs: Admin user editing form
+- error.ejs: Generic error page
+
+## Environment Variables (.env)
+```
+PORT=3000
+MONGODB_URI=mongodb://localhost:27017/auth-server
+SESSION_SECRET=your-super-secret-session-key
+NODE_ENV=development
+```
+
+## Package.json Scripts
+- start: node app.js
+- dev: nodemon app.js
+- test: placeholder for future tests
+
+## Dependencies to Install
+- express
+- ejs
+- mongoose
+- bcryptjs
+- express-session
+- connect-mongo
+- express-validator
+- dotenv
+- helmet
+- cors
+- express-rate-limit
+- nodemon (dev dependency)
+
+## Implementation Requirements
+
+### 1. Database Connection (config/db.js)
+- Connect to MongoDB using Mongoose
+- Handle connection events (connected, error, disconnected)
+- Graceful shutdown handling
+
+### 2. User Model (models/User.js)
+- Define schema with all required fields
+- Pre-save hook for password hashing
+- Instance method for password comparison
+- Static methods for finding users
+- Methods for checking package validity
+
+### 3. Package Model (models/Package.js)
+- Define schema with all required fields
+- Default packages seeding on first run
+
+### 4. Authentication Routes (routes/auth.js)
+- Implement login functionality
+- Implement logout functionality
+- Proper validation and error handling
+
+### 5. Dashboard Routes (routes/dashboard.js)
+- Implement user dashboard
+- Implement admin dashboard with access control
+
+### 6. Admin Routes (routes/admin.js)
+- Implement user management (create, read, update, delete)
+- Implement package management (create, read, update, delete)
+
+### 7. Authentication Middleware (middleware/auth.js)
+- isAuthenticated middleware to protect routes
+- isAdmin middleware for admin-only routes
+- checkPackageValidity middleware to verify package status
+
+### 8. Main Application (app.js)
+- Express app setup
+- Middleware configuration
+- View engine setup
+- Static file serving
+- Route registration
+- Error handling middleware
+- Server startup
+
+## Security Considerations
+- Passwords must be hashed before storing
+- Sessions must be secure and properly configured
+- Input validation on both client and server side
+- Protection against common web vulnerabilities (XSS, CSRF, etc.)
+- Proper HTTP headers for security
+- Rate limiting to prevent brute force attacks
+- Environment variables for sensitive configuration
+- CORS configuration to restrict origins
+
+## Package System Details
+
+### Free Package
+- 100 email validation credits per month
+- 5 concurrent validation limit
+- Basic features only
+
+### Premium Package
+- 1000 email validation credits per month
+- 20 concurrent validation limit (matches user preference)
+- Advanced features
+
+### Enterprise Package
+- 10000 email validation credits per month
+- 50 concurrent validation limit
+- All features
+
+## Admin User Management
+- Create users with username, email, password, and package assignment
+- Set custom package start and end dates
+- Activate/deactivate users
+- Edit existing user information and package assignments
+- Delete users
+
+## User Authentication Response
+When users log in successfully, the system will provide:
+- User validity dates (package start and end dates)
+- Active status (true/false)
+- Current package information
+- Concurrency limit based on package
+
+## Styling
+- Clean, professional CSS styling
+- Responsive design
+- Consistent color scheme
+- User-friendly form layouts
+- Clear error/success messaging
+- Admin dashboard with user management interface
+
+## Documentation
+- README.md with setup instructions
+- Requirements for MongoDB installation
+- Environment variable explanations
+- API endpoint documentation
+- Package system explanation
+- Admin user management guide
+- Security best practices implemented
+
+## Testing Requirements
+- Manual testing of all routes
+- Validation of authentication flow
+- Testing of error conditions
+- Verification of security measures
+- Session timeout testing
+- Package validity checking
+- Admin user management testing
+
+## Deployment Considerations
+- Production environment configuration
+- MongoDB connection pooling
+- Session store configuration for production
+- Security headers for production
+- Error logging for production
