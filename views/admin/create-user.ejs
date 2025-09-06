@@ -64,14 +64,8 @@
                         >
                     </div>
                     
-                    <div class="form-group">
-                        <label for="role" class="form-label">Role</label>
-                        <select id="role" name="role" class="form-select" required>
-                            <option value="">Select Role</option>
-                            <option value="user" <%= formData.role === 'user' ? 'selected' : '' %>>User</option>
-                            <option value="admin" <%= formData.role === 'admin' ? 'selected' : '' %>>Admin</option>
-                        </select>
-                    </div>
+                    <!-- Hidden field for role - always user -->
+                    <input type="hidden" name="role" value="user">
                     
                     <div class="form-group">
                         <label for="package" class="form-label">Package</label>

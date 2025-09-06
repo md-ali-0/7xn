@@ -9,6 +9,7 @@ A comprehensive Node.js authentication server built with Express, EJS, and Mongo
 - **Package System**: Three-tier package system (Free, Premium, Enterprise)
 - **Security**: Rate limiting, CSRF protection, password hashing, secure sessions
 - **Responsive Design**: Mobile-friendly interface with clean styling
+- **Desktop API**: RESTful API for desktop application integration
 
 ## Technology Stack
 
@@ -30,46 +31,48 @@ A comprehensive Node.js authentication server built with Express, EJS, and Mongo
 ### Installation
 
 1. Clone the repository:
-\`\`\`bash
+```bash
 git clone <repository-url>
 cd auth-server
-\`\`\`
+```
 
 2. Install dependencies:
-\`\`\`bash
+```bash
 npm install
-\`\`\`
+```
 
 3. Set up environment variables:
-\`\`\`bash
+```bash
 cp .env.example .env
-\`\`\`
+```
 
 Edit `.env` with your configuration:
-\`\`\`env
+```env
 MONGODB_URI=mongodb://localhost:27017/auth-server
 SESSION_SECRET=your-super-secret-session-key
 PORT=3000
 NODE_ENV=development
-\`\`\`
+```
 
 4. Start the server:
-\`\`\`bash
+```bash
 # Development mode with auto-reload
 npm run dev
 
 # Production mode
 npm start
-\`\`\`
+```
 
 5. Open your browser and navigate to `http://localhost:3000`
 
 ## Project Structure
 
-\`\`\`
+```
 auth-server/
 ├── config/
 │   └── db.js              # Database connection configuration
+├── docs/
+│   └── api.md             # API documentation
 ├── middleware/
 │   └── auth.js            # Authentication middleware
 ├── models/
@@ -101,7 +104,7 @@ auth-server/
 ├── app.js                 # Main application file
 ├── package.json
 └── README.md
-\`\`\`
+```
 
 ## Package System
 
@@ -138,6 +141,8 @@ Admins can:
 - `GET /auth/login` - Login form
 - `POST /auth/login` - Handle login
 - `POST /auth/logout` - Handle logout
+- `POST /auth/api/login` - Desktop application login
+- `POST /auth/api/verify-token` - Verify desktop app token
 
 ### Dashboard Routes
 - `GET /dashboard` - User/Admin dashboard
@@ -150,6 +155,16 @@ Admins can:
 - `POST /admin/users/edit/:id` - Handle user update
 - `POST /admin/users/delete/:id` - Delete user
 - `GET /admin/packages` - Package management
+
+## Desktop Application API
+
+The server provides a RESTful API for desktop application integration. See [API Documentation](docs/api.md) for detailed information.
+
+### Key Features
+- Token-based authentication
+- User verification
+- Package information retrieval
+- Account status checking
 
 ## Security Features
 
@@ -174,9 +189,9 @@ Admins can:
 
 ### Running in Development Mode
 
-\`\`\`bash
+```bash
 npm run dev
-\`\`\`
+```
 
 This starts the server with nodemon for automatic restarts on file changes.
 
@@ -186,9 +201,9 @@ The application will automatically create default packages on first run. To crea
 
 ### Testing
 
-\`\`\`bash
+```bash
 npm test
-\`\`\`
+```
 
 ## Deployment
 
@@ -202,7 +217,7 @@ npm test
 
 ### Example PM2 Configuration
 
-\`\`\`json
+```json
 {
   "name": "auth-server",
   "script": "app.js",
@@ -213,7 +228,7 @@ npm test
     "PORT": 3000
   }
 }
-\`\`\`
+```
 
 ## Contributing
 
@@ -242,3 +257,4 @@ For issues and questions:
 - Admin dashboard
 - Package management
 - Security features implemented
+- Desktop application API

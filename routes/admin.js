@@ -234,7 +234,6 @@ router.post(
       .withMessage("Username must be 3-20 characters and contain only letters, numbers, and underscores"),
     body("email").isEmail().normalizeEmail().withMessage("Please enter a valid email address"),
     body("password").isLength({ min: 6 }).withMessage("Password must be at least 6 characters long"),
-    body("role").isIn(["user", "admin"]).withMessage("Invalid role selected"),
     body("package").isMongoId().withMessage("Please select a valid package"),
     body("packageEndDate").isISO8601().withMessage("Please enter a valid end date"),
   ],
@@ -253,7 +252,7 @@ router.post(
         })
       }
 
-      const { username, email, password, role, package: packageId, packageEndDate } = req.body
+      const { username, email, password, package: packageId, packageEndDate } = req.body
 
       // Check if user already exists
       const existingUser = await User.findOne({
@@ -282,12 +281,12 @@ router.post(
         })
       }
 
-      // Create new user
+      // Create new user (always as user role)
       const newUser = new User({
         username,
         email,
         password,
-        role,
+        role: "user", // Always create as user
         package: packageId,
         packageStartDate: new Date(),
         packageEndDate: new Date(packageEndDate),

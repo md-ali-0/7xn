@@ -1,90 +1,91 @@
 const express = require("express")
 const { body, validationResult } = require("express-validator")
 const User = require("../models/User")
-const Package = require("../models/Package")
 const { redirectIfAuthenticated } = require("../middleware/auth")
-const { securityLogger } = require("../middleware/monitoring")
+const { authLimiter } = require("../middleware/security")
 
 const router = express.Router()
 
 // Login page
 router.get("/login", redirectIfAuthenticated, (req, res) => {
+  // Check if we're redirecting from another page
+  const returnTo = req.session.returnTo || "/dashboard"
+  // Clear the returnTo to prevent redirect loops
+  delete req.session.returnTo
+
   res.render("login", {
     title: "Login",
     error: null,
     email: "",
-    csrfToken: res.locals.csrfToken || req.session.csrfToken
+    returnTo: returnTo,
+    csrfToken: res.locals.csrfToken,
   })
 })
 
 // Handle login
 router.post(
   "/login",
+  authLimiter,
   [
     body("email").isEmail().normalizeEmail().withMessage("Please enter a valid email address"),
-    body("password").isLength({ min: 6 }).withMessage("Password must be at least 6 characters long"),
+    body("password").notEmpty().withMessage("Password is required"),
   ],
   async (req, res) => {
     try {
       const errors = validationResult(req)
 
       if (!errors.isEmpty()) {
-        securityLogger.logAuthAttempt(req, false, "Validation failed")
         return res.render("login", {
           title: "Login",
           error: errors.array()[0].msg,
           email: req.body.email || "",
-          csrfToken: res.locals.csrfToken || req.session.csrfToken
+          csrfToken: res.locals.csrfToken,
         })
       }
 
       const { email, password } = req.body
 
-      // Find user by email and populate package
+      // Find user by email
       const user = await User.findOne({ email }).populate("package")
 
       if (!user) {
-        securityLogger.logAuthAttempt(req, false, "User not found")
         return res.render("login", {
           title: "Login",
           error: "Invalid email or password",
           email: email,
-          csrfToken: res.locals.csrfToken || req.session.csrfToken
-        })
-      }
-
-      // Check password
-      const isPasswordValid = await user.comparePassword(password)
-
-      if (!isPasswordValid) {
-        securityLogger.logAuthAttempt(req, false, "Invalid password")
-        return res.render("login", {
-          title: "Login",
-          error: "Invalid email or password",
-          email: email,
-          csrfToken: res.locals.csrfToken || req.session.csrfToken
+          csrfToken: res.locals.csrfToken,
         })
       }
 
       // Check if user is active
       if (!user.isActive) {
-        securityLogger.logAuthAttempt(req, false, "Account deactivated")
         return res.render("login", {
           title: "Login",
           error: "Your account has been deactivated. Please contact support.",
           email: email,
-          csrfToken: res.locals.csrfToken || req.session.csrfToken
+          csrfToken: res.locals.csrfToken,
         })
       }
 
-      // Check if package is valid (skip for admin users)
+      // Check if non-admin user has valid package
       if (!user.isAdmin() && !user.isPackageValid()) {
-        securityLogger.logAuthAttempt(req, false, "Package expired")
         return res.render("login", {
           title: "Login",
           error: "Your package has expired. Please contact support to renew your subscription.",
           email: email,
-          csrfToken: res.locals.csrfToken || req.session.csrfToken
+          csrfToken: res.locals.csrfToken,
+        })
+      }
+
+      // Compare password
+      const isMatch = await user.comparePassword(password)
+
+      if (!isMatch) {
+        return res.render("login", {
+          title: "Login",
+          error: "Invalid email or password",
+          email: email,
+          csrfToken: res.locals.csrfToken,
         })
       }
 
@@ -92,41 +93,19 @@ router.post(
       user.lastLogin = new Date()
       await user.save()
 
-      // Create session (handle admin users who may not have a package)
-      req.session.user = {
-        _id: user._id,
-        username: user.username,
-        email: user.email,
-        role: user.role,
-        isActive: user.isActive,
-      }
-
-      // Only add package info for non-admin users
-      if (!user.isAdmin() && user.package) {
-        req.session.user.package = user.package
-        req.session.user.packageStartDate = user.packageStartDate
-        req.session.user.packageEndDate = user.packageEndDate
-      }
-
-      // Regenerate session ID for security
-      const oldCsrfToken = req.session.csrfToken; // Save the CSRF token
+      // Regenerate session to prevent session fixation
       req.session.regenerate((err) => {
         if (err) {
           console.error("Session regeneration error:", err)
-          securityLogger.logAuthAttempt(req, false, "Session regeneration failed")
           return res.render("login", {
             title: "Login",
-            error: "Login failed. Please try again.",
+            error: "An error occurred during login. Please try again.",
             email: email,
-            csrfToken: res.locals.csrfToken || req.session.csrfToken
+            csrfToken: res.locals.csrfToken,
           })
         }
 
-        // Restore the CSRF token after session regeneration
-        if (oldCsrfToken) {
-          req.session.csrfToken = oldCsrfToken;
-        }
-
+        // Store user data in session
         req.session.user = {
           _id: user._id,
           username: user.username,
@@ -138,28 +117,28 @@ router.post(
         // Only add package info for non-admin users
         if (!user.isAdmin() && user.package) {
           req.session.user.package = user.package
-          req.session.user.packageStartDate = user.packageStartDate
           req.session.user.packageEndDate = user.packageEndDate
         }
 
+        // Preserve CSRF token during session regeneration
+        req.session.csrfToken = res.locals.csrfToken
+
+        // Set session creation time
         req.session.createdAt = Date.now()
 
-        // Log successful authentication
-        securityLogger.logAuthAttempt(req, true)
-
         // Redirect to intended page or dashboard
-        const redirectTo = req.session.returnTo || "/dashboard"
+        const returnTo = req.session.returnTo || "/dashboard"
         delete req.session.returnTo
-        res.redirect(redirectTo)
+
+        res.redirect(returnTo)
       })
     } catch (error) {
       console.error("Login error:", error)
-      securityLogger.logAuthAttempt(req, false, "Server error")
       res.render("login", {
         title: "Login",
         error: "An error occurred during login. Please try again.",
         email: req.body.email || "",
-        csrfToken: res.locals.csrfToken || req.session.csrfToken
+        csrfToken: res.locals.csrfToken,
       })
     }
   },
@@ -167,34 +146,191 @@ router.post(
 
 // Handle logout
 router.post("/logout", (req, res) => {
-  const username = req.session.user?.username
-
   req.session.destroy((err) => {
     if (err) {
       console.error("Logout error:", err)
       return res.redirect("/dashboard")
     }
-
-    console.log(`User logged out: ${username}`)
     res.clearCookie("sessionId")
-    res.redirect("/")
+    res.redirect("/auth/login")
   })
 })
 
-// Logout GET route for convenience
-router.get("/logout", (req, res) => {
-  const username = req.session.user?.username
+// API endpoint for desktop application login
+router.post(
+  "/api/login",
+  [
+    body("email").isEmail().normalizeEmail().withMessage("Please enter a valid email address"),
+    body("password").notEmpty().withMessage("Password is required"),
+  ],
+  async (req, res) => {
+    try {
+      const errors = validationResult(req)
 
-  req.session.destroy((err) => {
-    if (err) {
-      console.error("Logout error:", err)
-      return res.redirect("/dashboard")
+      if (!errors.isEmpty()) {
+        return res.status(400).json({
+          success: false,
+          message: "Validation failed",
+          errors: errors.array()
+        })
+      }
+
+      const { email, password } = req.body
+
+      // Find user by email
+      const user = await User.findOne({ email }).populate("package")
+
+      if (!user) {
+        return res.status(401).json({
+          success: false,
+          message: "Invalid email or password"
+        })
+      }
+
+      // Check if user is active
+      if (!user.isActive) {
+        return res.status(403).json({
+          success: false,
+          message: "Your account has been deactivated. Please contact support."
+        })
+      }
+
+      // Check if non-admin user has valid package
+      if (!user.isAdmin() && !user.isPackageValid()) {
+        return res.status(403).json({
+          success: false,
+          message: "Your package has expired. Please contact support to renew your subscription."
+        })
+      }
+
+      // Compare password
+      const isMatch = await user.comparePassword(password)
+
+      if (!isMatch) {
+        return res.status(401).json({
+          success: false,
+          message: "Invalid email or password"
+        })
+      }
+
+      // Update last login
+      user.lastLogin = new Date()
+      await user.save()
+
+      // Generate a simple token for desktop app (in a real app, you might want to use JWT)
+      const token = require("crypto").randomBytes(32).toString("hex")
+
+      // Store token in session-like structure (simplified for desktop app)
+      // In a real implementation, you might want to use a proper token system
+      req.session.desktopTokens = req.session.desktopTokens || {}
+      req.session.desktopTokens[token] = {
+        userId: user._id,
+        createdAt: new Date()
+      }
+
+      // Return user data and token
+      res.json({
+        success: true,
+        message: "Login successful",
+        token: token,
+        user: {
+          id: user._id,
+          username: user.username,
+          email: user.email,
+          role: user.role,
+          isActive: user.isActive,
+          package: user.package ? {
+            id: user.package._id,
+            name: user.package.name,
+            emailCredits: user.package.emailCredits,
+            concurrencyLimit: user.package.concurrencyLimit
+          } : null,
+          packageEndDate: user.packageEndDate
+        }
+      })
+    } catch (error) {
+      console.error("Desktop login error:", error)
+      res.status(500).json({
+        success: false,
+        message: "An error occurred during login. Please try again."
+      })
+    }
+  }
+)
+
+// API endpoint to verify desktop app token
+router.post("/api/verify-token", async (req, res) => {
+  try {
+    const { token } = req.body
+
+    if (!token) {
+      return res.status(400).json({
+        success: false,
+        message: "Token is required"
+      })
     }
 
-    console.log(`User logged out: ${username}`)
-    res.clearCookie("sessionId")
-    res.redirect("/")
-  })
+    // Check if token exists in session
+    if (!req.session.desktopTokens || !req.session.desktopTokens[token]) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid or expired token"
+      })
+    }
+
+    // Get user from token
+    const tokenData = req.session.desktopTokens[token]
+    const user = await User.findById(tokenData.userId).populate("package")
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "User not found"
+      })
+    }
+
+    // Check if user is active
+    if (!user.isActive) {
+      return res.status(403).json({
+        success: false,
+        message: "Your account has been deactivated. Please contact support."
+      })
+    }
+
+    // Check if non-admin user has valid package
+    if (!user.isAdmin() && !user.isPackageValid()) {
+      return res.status(403).json({
+        success: false,
+        message: "Your package has expired. Please contact support to renew your subscription."
+      })
+    }
+
+    // Return user data
+    res.json({
+      success: true,
+      message: "Token is valid",
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        isActive: user.isActive,
+        package: user.package ? {
+          id: user.package._id,
+          name: user.package.name,
+          emailCredits: user.package.emailCredits,
+          concurrencyLimit: user.package.concurrencyLimit
+        } : null,
+        packageEndDate: user.packageEndDate
+      }
+    })
+  } catch (error) {
+    console.error("Token verification error:", error)
+    res.status(500).json({
+      success: false,
+      message: "An error occurred during token verification. Please try again."
+    })
+  }
 })
 
 module.exports = router
