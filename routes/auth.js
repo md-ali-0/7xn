@@ -295,7 +295,6 @@ router.post("/api/verify-token", async (req, res) => {
       })
     }
 
-    // Check if token exists in session
     if (!req.session.desktopTokens || !req.session.desktopTokens[token]) {
       return res.status(401).json({
         success: false,
@@ -334,7 +333,7 @@ router.post("/api/verify-token", async (req, res) => {
     if (!req.session.activeDevices) {
       req.session.activeDevices = {}
     }
-
+ 
     const userId = user._id.toString()
 
     if (req.session.activeDevices[userId] !== device_id && tokenData.deviceId !==  device_id) {
