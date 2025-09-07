@@ -286,7 +286,7 @@ router.post(
 // API endpoint to verify desktop app token
 router.post("/api/verify-token", async (req, res) => {
   try {
-    const { token } = req.body
+    const { token, device_id } = req.body
 
     if (!token) {
       return res.status(400).json({
@@ -336,7 +336,8 @@ router.post("/api/verify-token", async (req, res) => {
     }
 
     const userId = user._id.toString()
-    if (req.session.activeDevices[userId] !== tokenData.deviceId) {
+
+    if (req.session.activeDevices[userId] !== device_id && tokenData.deviceId !==  device_id) {
       // User has logged in on a different device, invalidate this token
       delete req.session.desktopTokens[token]
       return res.status(401).json({
