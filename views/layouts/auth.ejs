@@ -7,9 +7,7 @@
     <link rel="stylesheet" href="/css/style.css">
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
 </head>
-<body>
-    <%- include('../partials/header') %>
-    
+<body class="auth-layout">
     <main class="main-content">
         <div class="container">
             <% if (typeof success !== 'undefined' && success) { %>
@@ -23,8 +21,6 @@
             <%- body %>
         </div>
     </main>
-    
-    <%- include('../partials/footer') %>
     
     <script src="/js/main.js"></script>
 </body>

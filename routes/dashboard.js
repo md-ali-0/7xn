@@ -49,6 +49,7 @@ router.get("/", checkPackageValidity, async (req, res) => {
       user: user,
       daysUntilExpiry: daysUntilExpiry,
       stats: stats,
+      layout: "layouts/dashboard"
     })
   } catch (error) {
     console.error("Dashboard error:", error)
@@ -61,6 +62,7 @@ router.get("/", checkPackageValidity, async (req, res) => {
       isAuthenticated: res.locals.isAuthenticated || false,
       isAdmin: res.locals.isAdmin || false,
       currentUser: res.locals.currentUser || null,
+      layout: "layouts/main"
     })
   }
 })

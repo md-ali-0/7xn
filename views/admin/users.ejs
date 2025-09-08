@@ -1,292 +1,246 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= title %> - Gmail Checker Auth</title>
-    <link rel="stylesheet" href="/css/style.css">
-</head>
-<body>
-    <%- include('../partials/header') %>
-    
-    <main class="main-content">
-        <div class="container">
-            <div class="d-flex justify-between align-center mb-3">
-                <h1>User Management</h1>
-                <a href="/admin/users/create" class="btn btn-success">Create New User</a>
-            </div>
-            
-            <% if (success) { %>
-                <div class="alert alert-success"><%= success %></div>
-            <% } %>
-            
-            <% if (error) { %>
-                <div class="alert alert-error"><%= error %></div>
-            <% } %>
-            
-            <!-- Statistics Cards -->
-            <div class="dashboard-grid mb-3">
-                <div class="stat-card" style="background: linear-gradient(135deg, #007bff, #0056b3);">
-                    <div class="stat-number"><%= stats.total %></div>
-                    <div class="stat-label">Total Users</div>
-                </div>
-                <div class="stat-card" style="background: linear-gradient(135deg, #28a745, #218838);">
-                    <div class="stat-number"><%= stats.active %></div>
-                    <div class="stat-label">Active Users</div>
-                </div>
-                <div class="stat-card" style="background: linear-gradient(135deg, #dc3545, #c82333);">
-                    <div class="stat-number"><%= stats.expired %></div>
-                    <div class="stat-label">Expired Users</div>
-                </div>
-                <div class="stat-card" style="background: linear-gradient(135deg, #ffc107, #e0a800);">
-                    <div class="stat-number"><%= stats.expiring %></div>
-                    <div class="stat-label">Expiring Soon</div>
-                </div>
-            </div>
-            
-            <!-- Search and Filter Form -->
-            <div class="card mb-3">
-                <form method="GET" action="/admin/users" class="d-flex gap-2" style="flex-wrap: wrap; align-items: end;">
-                    <div class="form-group" style="margin-bottom: 0; min-width: 200px;">
-                        <label for="search" class="form-label">Search</label>
-                        <input 
-                            type="text" 
-                            id="search" 
-                            name="search" 
-                            class="form-input" 
-                            placeholder="Username or email..."
-                            value="<%= search %>"
-                        >
-                    </div>
-                    
-                    <div class="form-group" style="margin-bottom: 0; min-width: 120px;">
-                        <label for="role" class="form-label">Role</label>
-                        <select id="role" name="role" class="form-select">
-                            <option value="">All Roles</option>
-                            <option value="user" <%= roleFilter === 'user' ? 'selected' : '' %>>User</option>
-                            <option value="admin" <%= roleFilter === 'admin' ? 'selected' : '' %>>Admin</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group" style="margin-bottom: 0; min-width: 120px;">
-                        <label for="status" class="form-label">Status</label>
-                        <select id="status" name="status" class="form-select">
-                            <option value="">All Status</option>
-                            <option value="active" <%= statusFilter === 'active' ? 'selected' : '' %>>Active</option>
-                            <option value="inactive" <%= statusFilter === 'inactive' ? 'selected' : '' %>>Inactive</option>
-                            <option value="expired" <%= statusFilter === 'expired' ? 'selected' : '' %>>Expired</option>
-                            <option value="expiring" <%= statusFilter === 'expiring' ? 'selected' : '' %>>Expiring Soon</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group" style="margin-bottom: 0; min-width: 150px;">
-                        <label for="package" class="form-label">Package</label>
-                        <select id="package" name="package" class="form-select">
-                            <option value="">All Packages</option>
-                            <% packages.forEach(pkg => { %>
-                                <option value="<%= pkg._id %>" <%= packageFilter === pkg._id.toString() ? 'selected' : '' %>>
-                                    <%= pkg.name %>
-                                </option>
-                            <% }) %>
-                        </select>
-                    </div>
-                    
-                    <button type="submit" class="btn btn-primary">Filter</button>
-                    <a href="/admin/users" class="btn btn-secondary">Clear</a>
-                </form>
-            </div>
-            
-            <!-- Bulk Actions Form -->
-            <form id="bulkForm" method="POST" action="/admin/users/bulk-action">
-                <div class="card mb-2">
-                    <div class="d-flex justify-between align-center">
-                        <div class="d-flex gap-2 align-center">
-                            <input type="checkbox" id="selectAll" onchange="toggleAllCheckboxes()">
-                            <label for="selectAll">Select All</label>
-                        </div>
-                        <div class="d-flex gap-2">
-                            <select name="action" class="form-select" style="width: auto;">
-                                <option value="">Bulk Actions</option>
-                                <option value="activate">Activate Selected</option>
-                                <option value="deactivate">Deactivate Selected</option>
-                                <option value="delete">Delete Selected</option>
-                            </select>
-                            <button type="submit" class="btn btn-secondary" onclick="return confirmBulkAction()">Apply</button>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="card">
-                    <div class="table-responsive">
-                        <table class="table table-stacked">
-                            <thead>
-                                <tr>
-                                    <th width="40" data-label="Select"></th>
-                                    <th data-label="Username">Username</th>
-                                    <th data-label="Email">Email</th>
-                                    <th data-label="Role">Role</th>
-                                    <th data-label="Package">Package</th>
-                                    <th data-label="Device ID">Device ID</th>
-                                    <th data-label="Status">Status</th>
-                                    <th data-label="Expires">Expires</th>
-                                    <th data-label="Actions">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <% users.forEach(user => { %>
-                                    <tr>
-                                        <td data-label="Select">
-                                            <input type="checkbox" name="userIds" value="<%= user._id %>" class="user-checkbox">
-                                        </td>
-                                        <td data-label="Username"><%= user.username %></td>
-                                        <td data-label="Email"><%= user.email %></td>
-                                        <td data-label="Role">
-                                            <span class="<%= user.role === 'admin' ? 'text-primary' : '' %>">
-                                                <%= user.role.charAt(0).toUpperCase() + user.role.slice(1) %>
-                                            </span>
-                                        </td>
-                                        <td data-label="Package"><%= user.package ? user.package.name : 'N/A' %></td>
-                                        <td data-label="Device ID">
-                                            <% if (user.registeredDeviceId) { %>
-                                                <span class="text-muted" style="font-size: 0.8rem;"><%= user.registeredDeviceId.substring(0, 8) %>...</span>
-                                            <% } else { %>
-                                                <span class="text-muted">Not registered</span>
-                                            <% } %>
-                                        </td>
-                                        <td data-label="Status">
-                                            <span class="<%= user.isActive ? 'text-success' : 'text-danger' %>">
-                                                <%= user.isActive ? 'Active' : 'Inactive' %>
-                                            </span>
-                                        </td>
-                                        <td data-label="Expires">
-                                            <% 
-                                                if (user.package && user.packageEndDate) {
-                                                    const now = new Date();
-                                                    const expiry = new Date(user.packageEndDate);
-                                                    const isExpired = expiry < now;
-                                                    const daysLeft = Math.ceil((expiry - now) / (1000 * 60 * 60 * 24));
-                                            %>
-                                            <span class="<%= isExpired ? 'text-danger' : daysLeft <= 7 ? 'text-warning' : '' %>">
-                                                <%= expiry.toLocaleDateString() %>
-                                                <% if (!isExpired) { %>
-                                                    (<%= daysLeft %> days)
-                                                <% } else { %>
-                                                    (Expired)
-                                                <% } %>
-                                            </span>
-                                            <% } else { %>
-                                            <span>N/A</span>
-                                            <% } %>
-                                        </td>
-                                        <td data-label="Actions">
-                                            <div class="d-flex gap-1">
-                                                <a href="/admin/users/view/<%= user._id %>" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.875rem;">View</a>
-                                                <a href="/admin/users/edit/<%= user._id %>" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.875rem;">Edit</a>
-                                                <% if (user.registeredDeviceId) { %>
-                                                    <form action="/admin/users/reset-device/<%= user._id %>" method="POST" style="display: inline;">
-                                                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                                                        <button 
-                                                            type="submit" 
-                                                            class="btn btn-warning" 
-                                                            style="padding: 0.25rem 0.5rem; font-size: 0.875rem;"
-                                                            onclick="return confirm('Are you sure you want to reset the device registration for <%= user.username %>? This will allow them to log in from a different device.')"
-                                                        >
-                                                            Reset Device
-                                                        </button>
-                                                    </form>
-                                                <% } %>
-                                                <form action="/admin/users/delete/<%= user._id %>" method="POST" style="display: inline;">
-                                                    <button 
-                                                        type="submit" 
-                                                        class="btn btn-danger" 
-                                                        style="padding: 0.25rem 0.5rem; font-size: 0.875rem;"
-                                                        data-confirm-delete="Are you sure you want to delete user '<%= user.username %>'?"
-                                                    >
-                                                        Delete
-                                                    </button>
-                                                </form>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                <% }) %>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </form>
-            
-            <!-- Pagination -->
-            <% if (totalPages > 1) { %>
-                <div class="pagination-container">
-                    <div class="pagination-info">
-                        Showing page <%= currentPage %> of <%= totalPages %> (Total <%= totalUsers %> users)
-                    </div>
-                    <div class="pagination-controls">
-                        <% if (hasPrevPage) { %>
-                            <a href="/admin/users?page=1&search=<%= search %>&role=<%= roleFilter %>&status=<%= statusFilter %>&package=<%= packageFilter %>" class="btn btn-secondary pagination-btn">First</a>
-                            <a href="/admin/users?page=<%= prevPage %>&search=<%= search %>&role=<%= roleFilter %>&status=<%= statusFilter %>&package=<%= packageFilter %>" class="btn btn-secondary pagination-btn">Previous</a>
-                        <% } %>
-                        
-                        <% 
-                            // Calculate page range to display
-                            let startPage = Math.max(1, currentPage - 2);
-                            let endPage = Math.min(totalPages, currentPage + 2);
-                            
-                            // Adjust if near the beginning or end
-                            if (currentPage <= 3) {
-                                endPage = Math.min(totalPages, 5);
-                            } else if (currentPage >= totalPages - 2) {
-                                startPage = Math.max(1, totalPages - 4);
-                            }
-                        %>
-                        
-                        <% for (let i = startPage; i <= endPage; i++) { %>
-                            <% if (i === currentPage) { %>
-                                <span class="btn btn-primary pagination-btn active"><%= i %></span>
-                            <% } else { %>
-                                <a href="/admin/users?page=<%= i %>&search=<%= search %>&role=<%= roleFilter %>&status=<%= statusFilter %>&package=<%= packageFilter %>" class="btn btn-secondary pagination-btn"><%= i %></a>
-                            <% } %>
-                        <% } %>
-                        
-                        <% if (hasNextPage) { %>
-                            <a href="/admin/users?page=<%= nextPage %>&search=<%= search %>&role=<%= roleFilter %>&status=<%= statusFilter %>&package=<%= packageFilter %>" class="btn btn-secondary pagination-btn">Next</a>
-                            <a href="/admin/users?page=<%= totalPages %>&search=<%= search %>&role=<%= roleFilter %>&status=<%= statusFilter %>&package=<%= packageFilter %>" class="btn btn-secondary pagination-btn">Last</a>
-                        <% } %>
-                    </div>
-                </div>
-            <% } %>
+<div class="d-flex justify-between align-center mb-3">
+    <h1>User Management</h1>
+    <a href="/admin/users/create" class="btn btn-success">Create New User</a>
+</div>
+
+<% if (success) { %>
+    <div class="alert alert-success"><%= success %></div>
+<% } %>
+
+<% if (error) { %>
+    <div class="alert alert-error"><%= error %></div>
+<% } %>
+
+<!-- Statistics Cards -->
+<div class="dashboard-grid mb-3">
+    <div class="stat-card" style="background: linear-gradient(135deg, #007bff, #0056b3);">
+        <div class="stat-number"><%= stats.total %></div>
+        <div class="stat-label">Total Users</div>
+    </div>
+    <div class="stat-card" style="background: linear-gradient(135deg, #28a745, #218838);">
+        <div class="stat-number"><%= stats.active %></div>
+        <div class="stat-label">Active Users</div>
+    </div>
+    <div class="stat-card" style="background: linear-gradient(135deg, #dc3545, #c82333);">
+        <div class="stat-number"><%= stats.expired %></div>
+        <div class="stat-label">Expired Users</div>
+    </div>
+    <div class="stat-card" style="background: linear-gradient(135deg, #ffc107, #e0a800);">
+        <div class="stat-number"><%= stats.expiring %></div>
+        <div class="stat-label">Expiring Soon</div>
+    </div>
+</div>
+
+<!-- Search and Filter Form -->
+<div class="card mb-3">
+    <form method="GET" action="/admin/users" class="d-flex gap-2" style="flex-wrap: wrap; align-items: end;">
+        <div class="form-group" style="margin-bottom: 0; min-width: 200px;">
+            <label for="search" class="form-label">Search</label>
+            <input 
+                type="text" 
+                id="search" 
+                name="search" 
+                class="form-input" 
+                placeholder="Username or email..."
+                value="<%= search %>"
+            >
         </div>
-    </main>
+        
+        <div class="form-group" style="margin-bottom: 0; min-width: 120px;">
+            <label for="role" class="form-label">Role</label>
+            <select id="role" name="role" class="form-select">
+                <option value="">All Roles</option>
+                <option value="user" <%= roleFilter === 'user' ? 'selected' : '' %>>User</option>
+                <option value="admin" <%= roleFilter === 'admin' ? 'selected' : '' %>>Admin</option>
+            </select>
+        </div>
+        
+        <div class="form-group" style="margin-bottom: 0; min-width: 120px;">
+            <label for="status" class="form-label">Status</label>
+            <select id="status" name="status" class="form-select">
+                <option value="">All Status</option>
+                <option value="active" <%= statusFilter === 'active' ? 'selected' : '' %>>Active</option>
+                <option value="inactive" <%= statusFilter === 'inactive' ? 'selected' : '' %>>Inactive</option>
+                <option value="expired" <%= statusFilter === 'expired' ? 'selected' : '' %>>Expired</option>
+                <option value="expiring" <%= statusFilter === 'expiring' ? 'selected' : '' %>>Expiring Soon</option>
+            </select>
+        </div>
+        
+        <div class="form-group" style="margin-bottom: 0; min-width: 150px;">
+            <label for="package" class="form-label">Package</label>
+            <select id="package" name="package" class="form-select">
+                <option value="">All Packages</option>
+                <% packages.forEach(pkg => { %>
+                    <option value="<%= pkg._id %>" <%= packageFilter === pkg._id.toString() ? 'selected' : '' %>>
+                        <%= pkg.name %>
+                    </option>
+                <% }) %>
+            </select>
+        </div>
+        
+        <button type="submit" class="btn btn-primary">Filter</button>
+        <a href="/admin/users" class="btn btn-secondary">Clear</a>
+    </form>
+</div>
+
+<!-- Bulk Actions Form -->
+<form id="bulkForm" method="POST" action="/admin/users/bulk-action">
+    <div class="card mb-2">
+        <div class="d-flex justify-between align-center">
+            <div class="d-flex gap-2 align-center">
+                <input type="checkbox" id="selectAll" onchange="toggleAllCheckboxes()">
+                <label for="selectAll">Select All</label>
+            </div>
+            <div class="d-flex gap-2">
+                <select name="action" class="form-select" style="width: auto;">
+                    <option value="">Bulk Actions</option>
+                    <option value="activate">Activate Selected</option>
+                    <option value="deactivate">Deactivate Selected</option>
+                    <option value="delete">Delete Selected</option>
+                </select>
+                <button type="submit" class="btn btn-secondary" onclick="return confirmBulkAction()">Apply</button>
+            </div>
+        </div>
+    </div>
     
-    <%- include('../partials/footer') %>
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-stacked">
+                <thead>
+                    <tr>
+                        <th width="40" data-label="Select"></th>
+                        <th data-label="Username">Username</th>
+                        <th data-label="Email">Email</th>
+                        <th data-label="Role">Role</th>
+                        <th data-label="Package">Package</th>
+                        <th data-label="Device ID">Device ID</th>
+                        <th data-label="Status">Status</th>
+                        <th data-label="Expires">Expires</th>
+                        <th data-label="Actions">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% users.forEach(user => { %>
+                        <tr>
+                            <td data-label="Select">
+                                <input type="checkbox" name="userIds" value="<%= user._id %>" class="user-checkbox">
+                            </td>
+                            <td data-label="Username"><%= user.username %></td>
+                            <td data-label="Email"><%= user.email %></td>
+                            <td data-label="Role">
+                                <span class="<%= user.role === 'admin' ? 'text-primary' : '' %>">
+                                    <%= user.role.charAt(0).toUpperCase() + user.role.slice(1) %>
+                                </span>
+                            </td>
+                            <td data-label="Package"><%= user.package ? user.package.name : 'N/A' %></td>
+                            <td data-label="Device ID">
+                                <% if (user.registeredDeviceId) { %>
+                                    <span class="text-muted" style="font-size: 0.8rem;"><%= user.registeredDeviceId.substring(0, 8) %>...</span>
+                                <% } else { %>
+                                    <span class="text-muted">Not registered</span>
+                                <% } %>
+                            </td>
+                            <td data-label="Status">
+                                <span class="<%= user.isActive ? 'text-success' : 'text-danger' %>">
+                                    <%= user.isActive ? 'Active' : 'Inactive' %>
+                                </span>
+                            </td>
+                            <td data-label="Expires">
+                                <% 
+                                    if (user.package && user.packageEndDate) {
+                                        const now = new Date();
+                                        const expiry = new Date(user.packageEndDate);
+                                        const isExpired = expiry < now;
+                                        const daysLeft = Math.ceil((expiry - now) / (1000 * 60 * 60 * 24));
+                                %>
+                                <span class="<%= isExpired ? 'text-danger' : daysLeft <= 7 ? 'text-warning' : '' %>">
+                                    <%= expiry.toLocaleDateString() %>
+                                    <% if (!isExpired) { %>
+                                        (<%= daysLeft %> days)
+                                    <% } else { %>
+                                        (Expired)
+                                    <% } %>
+                                </span>
+                                <% } else { %>
+                                <span>N/A</span>
+                                <% } %>
+                            </td>
+                            <td data-label="Actions">
+                                <div class="d-flex gap-1">
+                                    <a href="/admin/users/view/<%= user._id %>" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.875rem;">View</a>
+                                    <a href="/admin/users/edit/<%= user._id %>" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.875rem;">Edit</a>
+                                    <% if (user.registeredDeviceId) { %>
+                                        <form action="/admin/users/reset-device/<%= user._id %>" method="POST" style="display: inline;">
+                                            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                                            <button 
+                                                type="submit" 
+                                                class="btn btn-warning" 
+                                                style="padding: 0.25rem 0.5rem; font-size: 0.875rem;"
+                                                onclick="return confirm('Are you sure you want to reset the device registration for <%= user.username %>? This will allow them to log in from a different device.')"
+                                            >
+                                                Reset Device
+                                            </button>
+                                        </form>
+                                    <% } %>
+                                    <form action="/admin/users/delete/<%= user._id %>" method="POST" style="display: inline;">
+                                        <button 
+                                            type="submit" 
+                                            class="btn btn-danger" 
+                                            style="padding: 0.25rem 0.5rem; font-size: 0.875rem;"
+                                            onclick="return confirm('Are you sure you want to delete user <%= user.username %>? This action cannot be undone.')"
+                                        >
+                                            Delete
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    <% }) %>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        <% if (totalPages > 1) { %>
+            <div class="pagination">
+                <% if (hasPrevPage) { %>
+                    <a href="/admin/users?page=<%= prevPage %>&search=<%= search %>&role=<%= roleFilter %>&status=<%= statusFilter %>&package=<%= packageFilter %>" class="btn btn-secondary">Previous</a>
+                <% } %>
+                
+                <span class="pagination-info">
+                    Page <%= currentPage %> of <%= totalPages %>
+                </span>
+                
+                <% if (hasNextPage) { %>
+                    <a href="/admin/users?page=<%= nextPage %>&search=<%= search %>&role=<%= roleFilter %>&status=<%= statusFilter %>&package=<%= packageFilter %>" class="btn btn-secondary">Next</a>
+                <% } %>
+            </div>
+        <% } %>
+    </div>
+</form>
+
+<script>
+    function toggleAllCheckboxes() {
+        const checkboxes = document.querySelectorAll('.user-checkbox');
+        const selectAll = document.getElementById('selectAll');
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = selectAll.checked;
+        });
+    }
     
-    <script src="/js/main.js"></script>
-    <script>
-        function toggleAllCheckboxes() {
-            const selectAll = document.getElementById('selectAll');
-            const checkboxes = document.querySelectorAll('.user-checkbox');
-            checkboxes.forEach(checkbox => {
-                checkbox.checked = selectAll.checked;
-            });
+    function confirmBulkAction() {
+        const action = document.querySelector('select[name="action"]').value;
+        if (!action) {
+            alert('Please select a bulk action');
+            return false;
         }
         
-        function confirmBulkAction() {
-            const selectedCheckboxes = document.querySelectorAll('.user-checkbox:checked');
-            const action = document.querySelector('select[name="action"]').value;
-            
-            if (selectedCheckboxes.length === 0) {
-                alert('Please select at least one user.');
-                return false;
-            }
-            
-            if (!action) {
-                alert('Please select an action.');
-                return false;
-            }
-            
-            const actionText = action === 'delete' ? 'delete' : action;
-            return confirm(`Are you sure you want to ${actionText} ${selectedCheckboxes.length} selected user(s)?`);
+        const selectedCount = document.querySelectorAll('.user-checkbox:checked').length;
+        if (selectedCount === 0) {
+            alert('Please select at least one user');
+            return false;
         }
-    </script>
-</body>
-</html>
+        
+        return confirm(`Are you sure you want to ${action} ${selectedCount} user(s)?`);
+    }
+</script>

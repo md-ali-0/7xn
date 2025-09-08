@@ -91,7 +91,8 @@ router.get("/users", async (req, res) => {
       packageFilter: packageFilter,
       success: req.query.success || null,
       error: req.query.error || null,
-      csrfToken: res.locals.csrfToken
+      csrfToken: res.locals.csrfToken,
+      layout: "layouts/dashboard"
     })
   } catch (error) {
     console.error("Admin users error:", error)
@@ -104,6 +105,7 @@ router.get("/users", async (req, res) => {
       isAuthenticated: false,
       isAdmin: false,
       currentUser: null,
+      layout: "layouts/main"
     })
   }
 })
@@ -168,6 +170,7 @@ router.get("/users/view/:id", async (req, res) => {
         isAuthenticated: false,
         isAdmin: false,
         currentUser: null,
+        layout: "layouts/main"
       })
     }
 
@@ -182,6 +185,7 @@ router.get("/users/view/:id", async (req, res) => {
       title: `User Details - ${user.username}`,
       user: user,
       userStats: userStats,
+      layout: "layouts/dashboard"
     })
   } catch (error) {
     console.error("View user error:", error)
@@ -194,6 +198,7 @@ router.get("/users/view/:id", async (req, res) => {
       isAuthenticated: false,
       isAdmin: false,
       currentUser: null,
+      layout: "layouts/main"
     })
   }
 })
@@ -208,7 +213,8 @@ router.get("/users/create", async (req, res) => {
       packages: packages,
       error: null,
       formData: {},
-      csrfToken: res.locals.csrfToken
+      csrfToken: res.locals.csrfToken,
+      layout: "layouts/dashboard"
     })
   } catch (error) {
     console.error("Create user form error:", error)
@@ -221,6 +227,7 @@ router.get("/users/create", async (req, res) => {
       isAuthenticated: res.locals.isAuthenticated || false,
       isAdmin: res.locals.isAdmin || false,
       currentUser: res.locals.currentUser || null,
+      layout: "layouts/main"
     })
   }
 })
@@ -249,7 +256,8 @@ router.post(
           packages: packages,
           error: errors.array()[0].msg,
           formData: req.body,
-          csrfToken: res.locals.csrfToken
+          csrfToken: res.locals.csrfToken,
+          layout: "layouts/dashboard"
         })
       }
 
@@ -266,7 +274,8 @@ router.post(
           packages: packages,
           error: "User with this email or username already exists",
           formData: req.body,
-          csrfToken: res.locals.csrfToken
+          csrfToken: res.locals.csrfToken,
+          layout: "layouts/dashboard"
         })
       }
 
@@ -278,7 +287,8 @@ router.post(
           packages: packages,
           error: "Selected package not found",
           formData: req.body,
-          csrfToken: res.locals.csrfToken
+          csrfToken: res.locals.csrfToken,
+          layout: "layouts/dashboard"
         })
       }
 
@@ -307,7 +317,8 @@ router.post(
         packages: packages,
         error: "An error occurred while creating the user. Please try again.",
         formData: req.body,
-        csrfToken: res.locals.csrfToken
+        csrfToken: res.locals.csrfToken,
+        layout: "layouts/dashboard"
       })
     }
   },
@@ -337,7 +348,8 @@ router.get("/users/edit/:id", async (req, res) => {
       user: user,
       packages: packages,
       error: null,
-      csrfToken: res.locals.csrfToken
+      csrfToken: res.locals.csrfToken,
+      layout: "layouts/dashboard"
     })
   } catch (error) {
     console.error("Edit user form error:", error)
@@ -383,6 +395,7 @@ router.post(
           isAuthenticated: res.locals.isAuthenticated || false,
           isAdmin: res.locals.isAdmin || false,
           currentUser: res.locals.currentUser || null,
+          layout: "layouts/main"
         })
       }
 
@@ -394,7 +407,8 @@ router.post(
           user: user,
           packages: packages,
           error: errors.array()[0].msg,
-          csrfToken: res.locals.csrfToken
+          csrfToken: res.locals.csrfToken,
+          layout: "layouts/dashboard"
         })
       }
 
@@ -412,7 +426,8 @@ router.post(
           user: user,
           packages: packages,
           error: "Username or email is already taken by another user",
-          csrfToken: res.locals.csrfToken
+          csrfToken: res.locals.csrfToken,
+          layout: "layouts/dashboard"
         })
       }
 
@@ -442,7 +457,8 @@ router.post(
         user: user,
         packages: packages,
         error: "An error occurred while updating the user. Please try again.",
-        csrfToken: res.locals.csrfToken
+        csrfToken: res.locals.csrfToken,
+        layout: "layouts/dashboard"
       })
     }
   },
@@ -535,6 +551,7 @@ router.get("/packages", async (req, res) => {
       totalPackages: totalPackages,
       success: req.query.success || null,
       error: req.query.error || null,
+      layout: "layouts/dashboard"
     })
   } catch (error) {
     console.error("Admin packages error:", error)
@@ -544,6 +561,7 @@ router.get("/packages", async (req, res) => {
         status: 500,
         message: "An error occurred while loading packages.",
       },
+      layout: "layouts/main"
     })
   }
 })
@@ -554,7 +572,8 @@ router.get("/packages/create", (req, res) => {
     title: "Create Package",
     error: null,
     formData: {},
-    csrfToken: res.locals.csrfToken
+    csrfToken: res.locals.csrfToken,
+    layout: "layouts/dashboard"
   })
 })
 
@@ -576,7 +595,8 @@ router.post(
           title: "Create Package",
           error: errors.array()[0].msg,
           formData: req.body,
-          csrfToken: res.locals.csrfToken
+          csrfToken: res.locals.csrfToken,
+          layout: "layouts/dashboard"
         })
       }
 
@@ -589,7 +609,8 @@ router.post(
           title: "Create Package",
           error: "Package with this name already exists",
           formData: req.body,
-          csrfToken: res.locals.csrfToken
+          csrfToken: res.locals.csrfToken,
+          layout: "layouts/dashboard"
         })
       }
 
@@ -617,7 +638,8 @@ router.post(
         title: "Create Package",
         error: "An error occurred while creating the package. Please try again.",
         formData: req.body,
-        csrfToken: res.locals.csrfToken
+        csrfToken: res.locals.csrfToken,
+        layout: "layouts/dashboard"
       })
     }
   },
@@ -638,6 +660,7 @@ router.get("/packages/edit/:id", async (req, res) => {
         isAuthenticated: res.locals.isAuthenticated || false,
         isAdmin: res.locals.isAdmin || false,
         currentUser: res.locals.currentUser || null,
+        layout: "layouts/main"
       })
     }
 
@@ -645,7 +668,8 @@ router.get("/packages/edit/:id", async (req, res) => {
       title: "Edit Package",
       package: pkg,
       error: null,
-      csrfToken: res.locals.csrfToken
+      csrfToken: res.locals.csrfToken,
+      layout: "layouts/dashboard"
     })
   } catch (error) {
     console.error("Edit package form error:", error)
@@ -658,6 +682,7 @@ router.get("/packages/edit/:id", async (req, res) => {
       isAuthenticated: res.locals.isAuthenticated || false,
       isAdmin: res.locals.isAdmin || false,
       currentUser: res.locals.currentUser || null,
+      layout: "layouts/main"
     })
   }
 })
@@ -686,6 +711,7 @@ router.post(
           isAuthenticated: res.locals.isAuthenticated || false,
           isAdmin: res.locals.isAdmin || false,
           currentUser: res.locals.currentUser || null,
+          layout: "layouts/main"
         })
       }
 
@@ -696,7 +722,8 @@ router.post(
           title: "Edit Package",
           package: pkg,
           error: errors.array()[0].msg,
-          csrfToken: res.locals.csrfToken
+          csrfToken: res.locals.csrfToken,
+          layout: "layouts/dashboard"
         })
       }
 
@@ -713,7 +740,8 @@ router.post(
           title: "Edit Package",
           package: pkg,
           error: "Package name is already taken by another package",
-          csrfToken: res.locals.csrfToken
+          csrfToken: res.locals.csrfToken,
+          layout: "layouts/dashboard"
         })
       }
 
@@ -742,7 +770,8 @@ router.post(
         title: "Edit Package",
         package: pkg,
         error: "An error occurred while updating the package. Please try again.",
-        csrfToken: res.locals.csrfToken
+        csrfToken: res.locals.csrfToken,
+        layout: "layouts/dashboard"
       })
     }
   },
@@ -781,6 +810,7 @@ router.get("/packages/view/:id", async (req, res) => {
       package: pkg,
       users: users,
       packageStats: packageStats,
+      layout: "layouts/dashboard"
     })
   } catch (error) {
     console.error("View package error:", error)
@@ -790,6 +820,7 @@ router.get("/packages/view/:id", async (req, res) => {
         status: 500,
         message: "An error occurred while loading package details.",
       },
+      layout: "layouts/main"
     })
   }
 })

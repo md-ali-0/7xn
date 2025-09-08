@@ -1,168 +1,147 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= title %> - Gmail Checker Auth</title>
-    <link rel="stylesheet" href="/css/style.css">
-</head>
-<body>
-    <%- include('../partials/header') %>
-    
-    <main class="main-content">
-        <div class="container">
-            <div class="d-flex justify-between align-center mb-3">
-                <h1>Package Details: <%= package.name %></h1>
-                <div class="d-flex gap-2">
-                    <a href="/admin/packages/edit/<%= package._id %>" class="btn btn-primary">Edit Package</a>
-                    <a href="/admin/packages" class="btn btn-secondary">Back to Packages</a>
-                </div>
-            </div>
-            
-            <div class="dashboard-grid">
-                <!-- Package Information -->
-                <div class="card">
-                    <div class="card-header">
-                        <h2 class="card-title">Package Information</h2>
-                    </div>
-                    <p><strong>Name:</strong> <%= package.name %></p>
-                    <p><strong>Email Credits:</strong> <%= package.emailCredits.toLocaleString() %> per month</p>
-                    <p><strong>Concurrency Limit:</strong> <%= package.concurrencyLimit %></p>
-                    <p><strong>Status:</strong> 
-                        <span class="<%= package.isActive ? 'text-success' : 'text-danger' %>">
-                            <%= package.isActive ? 'Active' : 'Inactive' %>
-                        </span>
-                    </p>
-                    <p><strong>Created:</strong> <%= package.createdAt.toLocaleDateString() %></p>
-                    <p><strong>Last Updated:</strong> <%= package.updatedAt.toLocaleDateString() %></p>
-                </div>
-                
-                <!-- Package Statistics -->
-                <div class="card">
-                    <div class="card-header">
-                        <h2 class="card-title">Package Statistics</h2>
-                    </div>
-                    <p><strong>Total Users:</strong> <%= packageStats.totalUsers %></p>
-                    <p><strong>Active Users:</strong> 
-                        <span class="text-success"><%= packageStats.activeUsers %></span>
-                    </p>
-                    <p><strong>Expired Users:</strong> 
-                        <span class="text-danger"><%= packageStats.expiredUsers %></span>
-                    </p>
-                    <p><strong>Package Age:</strong> <%= packageStats.packageAge %> days</p>
-                </div>
-                
-                <!-- Package Features -->
-                <div class="card">
-                    <div class="card-header">
-                        <h2 class="card-title">Package Features</h2>
-                    </div>
-                    <% if (package.features.length > 0) { %>
-                        <ul>
-                            <% package.features.forEach(feature => { %>
-                                <li><%= feature %></li>
-                            <% }) %>
-                        </ul>
-                    <% } else { %>
-                        <p class="text-muted">No features defined</p>
-                    <% } %>
-                </div>
-            </div>
-            
-            <!-- Users with this package -->
-            <% if (users.length > 0) { %>
-                <div class="card mt-3">
-                    <div class="card-header">
-                        <h2 class="card-title">Users with this Package (<%= users.length %>)</h2>
-                    </div>
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Username</th>
-                                <th>Email</th>
-                                <th>Status</th>
-                                <th>Package Expires</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <% users.forEach(user => { %>
-                                <tr>
-                                    <td><%= user.username %></td>
-                                    <td><%= user.email %></td>
-                                    <td>
-                                        <span class="<%= user.isActive ? 'text-success' : 'text-danger' %>">
-                                            <%= user.isActive ? 'Active' : 'Inactive' %>
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <% 
-                                            const now = new Date();
-                                            const expiry = new Date(user.packageEndDate);
-                                            const isExpired = expiry < now;
-                                            const daysLeft = Math.ceil((expiry - now) / (1000 * 60 * 60 * 24));
-                                        %>
-                                        <span class="<%= isExpired ? 'text-danger' : daysLeft <= 7 ? 'text-warning' : '' %>">
-                                            <%= expiry.toLocaleDateString() %>
-                                            <% if (!isExpired) { %>
-                                                (<%= daysLeft %> days)
-                                            <% } else { %>
-                                                (Expired)
-                                            <% } %>
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <a href="/admin/users/view/<%= user._id %>" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.875rem;">View</a>
-                                    </td>
-                                </tr>
-                            <% }) %>
-                        </tbody>
-                    </table>
-                </div>
-            <% } else { %>
-                <div class="card mt-3">
-                    <div class="card-header">
-                        <h2 class="card-title">Users with this Package</h2>
-                    </div>
-                    <p class="text-muted">No users are currently assigned to this package.</p>
-                </div>
-            <% } %>
-            
-            <!-- Quick Actions -->
-            <div class="card mt-3">
-                <div class="card-header">
-                    <h2 class="card-title">Quick Actions</h2>
-                </div>
-                <div class="d-flex gap-2" style="flex-wrap: wrap;">
-                    <a href="/admin/packages/edit/<%= package._id %>" class="btn btn-primary">Edit Package</a>
-                    <a href="/admin/users/create" class="btn btn-success">Create User with this Package</a>
-                    
-                    <% if (packageStats.totalUsers === 0) { %>
-                        <form action="/admin/packages/delete/<%= package._id %>" method="POST" style="display: inline;">
-                            <button 
-                                type="submit" 
-                                class="btn btn-danger"
-                                data-confirm-delete="Are you sure you want to delete package '<%= package.name %>'? This action cannot be undone."
-                            >
-                                Delete Package
-                            </button>
-                        </form>
-                    <% } else { %>
-                        <button 
-                            class="btn btn-danger" 
-                            disabled
-                            title="Cannot delete package with assigned users"
-                        >
-                            Delete Package
-                        </button>
-                    <% } %>
-                </div>
-            </div>
+<div class="d-flex justify-between align-center mb-3">
+    <h1>Package Details: <%= package.name %></h1>
+    <div class="d-flex gap-2">
+        <a href="/admin/packages/edit/<%= package._id %>" class="btn btn-primary">Edit Package</a>
+        <a href="/admin/packages" class="btn btn-secondary">Back to Packages</a>
+    </div>
+</div>
+
+<div class="dashboard-grid">
+    <!-- Package Information -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Package Information</h2>
         </div>
-    </main>
+        <p><strong>Name:</strong> <%= package.name %></p>
+        <p><strong>Email Credits:</strong> <%= package.emailCredits.toLocaleString() %> per month</p>
+        <p><strong>Concurrency Limit:</strong> <%= package.concurrencyLimit %></p>
+        <p><strong>Status:</strong> 
+            <span class="<%= package.isActive ? 'text-success' : 'text-danger' %>">
+                <%= package.isActive ? 'Active' : 'Inactive' %>
+            </span>
+        </p>
+        <p><strong>Created:</strong> <%= package.createdAt.toLocaleDateString() %></p>
+        <p><strong>Last Updated:</strong> <%= package.updatedAt.toLocaleDateString() %></p>
+    </div>
     
-    <%- include('../partials/footer') %>
+    <!-- Package Statistics -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Package Statistics</h2>
+        </div>
+        <p><strong>Total Users:</strong> <%= packageStats.totalUsers %></p>
+        <p><strong>Active Users:</strong> 
+            <span class="text-success"><%= packageStats.activeUsers %></span>
+        </p>
+        <p><strong>Expired Users:</strong> 
+            <span class="text-danger"><%= packageStats.expiredUsers %></span>
+        </p>
+        <p><strong>Package Age:</strong> <%= packageStats.packageAge %> days</p>
+    </div>
     
-    <script src="/js/main.js"></script>
-</body>
-</html>
+    <!-- Package Features -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Package Features</h2>
+        </div>
+        <% if (package.features.length > 0) { %>
+            <ul>
+                <% package.features.forEach(feature => { %>
+                    <li><%= feature %></li>
+                <% }) %>
+            </ul>
+        <% } else { %>
+            <p class="text-muted">No features defined</p>
+        <% } %>
+    </div>
+</div>
+
+<!-- Users with this package -->
+<% if (users.length > 0) { %>
+    <div class="card mt-3">
+        <div class="card-header">
+            <h2 class="card-title">Users with this Package (<%= users.length %>)</h2>
+        </div>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Email</th>
+                    <th>Status</th>
+                    <th>Package Expires</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% users.forEach(user => { %>
+                    <tr>
+                        <td><%= user.username %></td>
+                        <td><%= user.email %></td>
+                        <td>
+                            <span class="<%= user.isActive ? 'text-success' : 'text-danger' %>">
+                                <%= user.isActive ? 'Active' : 'Inactive' %>
+                            </span>
+                        </td>
+                        <td>
+                            <% 
+                                const now = new Date();
+                                const expiry = new Date(user.packageEndDate);
+                                const isExpired = expiry < now;
+                                const daysLeft = Math.ceil((expiry - now) / (1000 * 60 * 60 * 24));
+                            %>
+                            <span class="<%= isExpired ? 'text-danger' : daysLeft <= 7 ? 'text-warning' : '' %>">
+                                <%= expiry.toLocaleDateString() %>
+                                <% if (!isExpired) { %>
+                                    (<%= daysLeft %> days)
+                                <% } else { %>
+                                    (Expired)
+                                <% } %>
+                            </span>
+                        </td>
+                        <td>
+                            <a href="/admin/users/view/<%= user._id %>" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.875rem;">View</a>
+                        </td>
+                    </tr>
+                <% }) %>
+            </tbody>
+        </table>
+    </div>
+<% } else { %>
+    <div class="card mt-3">
+        <div class="card-header">
+            <h2 class="card-title">Users with this Package</h2>
+        </div>
+        <p class="text-muted">No users are currently assigned to this package.</p>
+    </div>
+<% } %>
+
+<!-- Quick Actions -->
+<div class="card mt-3">
+    <div class="card-header">
+        <h2 class="card-title">Quick Actions</h2>
+    </div>
+    <div class="d-flex gap-2" style="flex-wrap: wrap;">
+        <a href="/admin/packages/edit/<%= package._id %>" class="btn btn-primary">Edit Package</a>
+        <a href="/admin/users/create" class="btn btn-success">Create User with this Package</a>
+        
+        <% if (packageStats.totalUsers === 0) { %>
+            <form action="/admin/packages/delete/<%= package._id %>" method="POST" style="display: inline;">
+                <button 
+                    type="submit" 
+                    class="btn btn-danger"
+                    data-confirm-delete="Are you sure you want to delete package '<%= package.name %>'? This action cannot be undone."
+                >
+                    Delete Package
+                </button>
+            </form>
+        <% } else { %>
+            <button 
+                class="btn btn-danger" 
+                disabled
+                title="Cannot delete package with assigned users"
+            >
+                Delete Package
+            </button>
+        <% } %>
+    </div>
+</div>

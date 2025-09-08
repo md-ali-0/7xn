@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="/css/style.css">
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
 </head>
-<body>
+<body class="dashboard-layout">
     <%- include('../partials/header') %>
     
     <main class="main-content">
@@ -20,7 +20,7 @@
                 <div class="alert alert-error"><%= error %></div>
             <% } %>
             
-            <%- body %>
+            <%- locals.body || '' %>
         </div>
     </main>
     

@@ -19,6 +19,7 @@ router.get("/login", redirectIfAuthenticated, (req, res) => {
     email: "",
     returnTo: returnTo,
     csrfToken: res.locals.csrfToken,
+    layout: "layouts/auth"
   })
 })
 
@@ -40,6 +41,7 @@ router.post(
           error: errors.array()[0].msg,
           email: req.body.email || "",
           csrfToken: res.locals.csrfToken,
+          layout: "layouts/auth"
         })
       }
 
@@ -54,6 +56,7 @@ router.post(
           error: "Invalid email or password",
           email: email,
           csrfToken: res.locals.csrfToken,
+          layout: "layouts/auth"
         })
       }
 
@@ -64,6 +67,7 @@ router.post(
           error: "Your account has been deactivated. Please contact support.",
           email: email,
           csrfToken: res.locals.csrfToken,
+          layout: "layouts/auth"
         })
       }
 
@@ -74,6 +78,7 @@ router.post(
           error: "Your package has expired. Please contact support to renew your subscription.",
           email: email,
           csrfToken: res.locals.csrfToken,
+          layout: "layouts/auth"
         })
       }
 
@@ -86,6 +91,7 @@ router.post(
           error: "Invalid email or password",
           email: email,
           csrfToken: res.locals.csrfToken,
+          layout: "layouts/auth"
         })
       }
 
@@ -102,6 +108,7 @@ router.post(
             error: "An error occurred during login. Please try again.",
             email: email,
             csrfToken: res.locals.csrfToken,
+            layout: "layouts/auth"
           })
         }
 
@@ -139,6 +146,7 @@ router.post(
         error: "An error occurred during login. Please try again.",
         email: req.body.email || "",
         csrfToken: res.locals.csrfToken,
+        layout: "layouts/auth"
       })
     }
   },

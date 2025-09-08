@@ -5,6 +5,7 @@ const helmet = require("helmet")
 const cors = require("cors")
 const rateLimit = require("express-rate-limit")
 const path = require("path")
+const expressLayouts = require("express-ejs-layouts")
 require("dotenv").config()
 
 // Import database connection
@@ -131,6 +132,10 @@ app.use(
 app.set("view engine", "ejs")
 app.set("views", path.join(__dirname, "views"))
 
+// Express EJS Layouts
+app.use(expressLayouts)
+app.set("layout", "layouts/main")
+
 // Session configuration with enhanced security
 app.use(
   session({
@@ -165,8 +170,14 @@ app.use(csrfProtection)
 app.use(loadUser)
 
 // Routes with specific rate limiting
+// Redirect root path to login page for unauthenticated users
+// or to dashboard for authenticated users
 app.get("/", (req, res) => {
-  res.render("index", { title: "Gmail Checker Authentication" })
+  if (req.session && req.session.user) {
+    return res.redirect("/dashboard")
+  } else {
+    return res.redirect("/auth/login")
+  }
 })
 
 // Health check endpoint
@@ -191,6 +202,7 @@ app.use((req, res) => {
     isAuthenticated: res.locals.isAuthenticated || false,
     isAdmin: res.locals.isAdmin || false,
     currentUser: res.locals.currentUser || null,
+    layout: "layouts/main"
   })
 })
 
@@ -230,6 +242,7 @@ app.use((err, req, res, next) => {
     isAuthenticated: res.locals.isAuthenticated || false,
     isAdmin: res.locals.isAdmin || false,
     currentUser: res.locals.currentUser || null,
+    layout: "layouts/main"
   })
 })
 

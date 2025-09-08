@@ -1,141 +1,120 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= title %> - Gmail Checker Auth</title>
-    <link rel="stylesheet" href="/css/style.css">
-</head>
-<body>
-    <%- include('../partials/header') %>
+<div class="d-flex justify-between align-center mb-3">
+    <h1>Edit User: <%= user.username %></h1>
+    <a href="/admin/users" class="btn btn-secondary">Back to Users</a>
+</div>
+
+<div class="form-container" style="max-width: 600px;">
+    <% if (error) { %>
+        <div class="alert alert-error"><%= error %></div>
+    <% } %>
     
-    <main class="main-content">
-        <div class="container">
-            <div class="d-flex justify-between align-center mb-3">
-                <h1>Edit User: <%= user.username %></h1>
-                <a href="/admin/users" class="btn btn-secondary">Back to Users</a>
-            </div>
-            
-            <div class="form-container" style="max-width: 600px;">
-                <% if (error) { %>
-                    <div class="alert alert-error"><%= error %></div>
-                <% } %>
-                
-                <div class="card mb-3">
-                    <div class="card-header">
-                        <h2 class="card-title">Device Information</h2>
-                    </div>
-                    <p><strong>Registered Device ID:</strong> 
-                        <% if (user.registeredDeviceId) { %>
-                            <span class="text-success"><%= user.registeredDeviceId %></span>
-                        <% } else { %>
-                            <span class="text-muted">Not registered</span>
-                        <% } %>
-                    </p>
-                    <% if (user.registeredDeviceId) { %>
-                        <form action="/admin/users/reset-device/<%= user._id %>" method="POST">
-                            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                            <button type="submit" class="btn btn-warning" onclick="return confirm('Are you sure you want to reset the device registration for this user?')">
-                                Reset Device Registration
-                            </button>
-                        </form>
-                    <% } %>
-                </div>
-                
-                <form action="/admin/users/edit/<%= user._id %>" method="POST" data-validate>
-                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                    <div class="form-group">
-                        <label for="username" class="form-label">Username</label>
-                        <input 
-                            type="text" 
-                            id="username" 
-                            name="username" 
-                            class="form-input" 
-                            value="<%= user.username %>"
-                            required 
-                            minlength="3"
-                            maxlength="20"
-                            pattern="[a-zA-Z0-9_]+"
-                            title="Username can only contain letters, numbers, and underscores"
-                        >
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="email" class="form-label">Email Address</label>
-                        <input 
-                            type="email" 
-                            id="email" 
-                            name="email" 
-                            class="form-input" 
-                            value="<%= user.email %>"
-                            required 
-                        >
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="password" class="form-label">Password (leave blank to keep current)</label>
-                        <input 
-                            type="password" 
-                            id="password" 
-                            name="password" 
-                            class="form-input" 
-                            minlength="6"
-                            data-strength
-                        >
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="role" class="form-label">Role</label>
-                        <select id="role" name="role" class="form-select" required>
-                            <option value="user" <%= user.role === 'user' ? 'selected' : '' %>>User</option>
-                            <option value="admin" <%= user.role === 'admin' ? 'selected' : '' %>>Admin</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="package" class="form-label">Package</label>
-                        <select id="package" name="package" class="form-select" required>
-                            <% packages.forEach(pkg => { %>
-                                <option 
-                                    value="<%= pkg._id %>" 
-                                    <%= user.package._id.toString() === pkg._id.toString() ? 'selected' : '' %>
-                                >
-                                    <%= pkg.name %> - <%= pkg.emailCredits.toLocaleString() %> credits, <%= pkg.concurrencyLimit %> concurrent
-                                </option>
-                            <% }) %>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="packageEndDate" class="form-label">Package End Date</label>
-                        <input 
-                            type="date" 
-                            id="packageEndDate" 
-                            name="packageEndDate" 
-                            class="form-input" 
-                            value="<%= user.packageEndDate.toISOString().split('T')[0] %>"
-                            required 
-                        >
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="isActive" class="form-label">Account Status</label>
-                        <select id="isActive" name="isActive" class="form-select" required>
-                            <option value="true" <%= user.isActive ? 'selected' : '' %>>Active</option>
-                            <option value="false" <%= !user.isActive ? 'selected' : '' %>>Inactive</option>
-                        </select>
-                    </div>
-                    
-                    <button type="submit" class="btn btn-primary" style="width: 100%;">
-                        Update User
-                    </button>
-                </form>
-            </div>
+    <div class="card mb-3">
+        <div class="card-header">
+            <h2 class="card-title">Device Information</h2>
         </div>
-    </main>
+        <p><strong>Registered Device ID:</strong> 
+            <% if (user.registeredDeviceId) { %>
+                <span class="text-success"><%= user.registeredDeviceId %></span>
+            <% } else { %>
+                <span class="text-muted">Not registered</span>
+            <% } %>
+        </p>
+        <% if (user.registeredDeviceId) { %>
+            <form action="/admin/users/reset-device/<%= user._id %>" method="POST">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <button type="submit" class="btn btn-warning" onclick="return confirm('Are you sure you want to reset the device registration for this user?')">
+                    Reset Device Registration
+                </button>
+            </form>
+        <% } %>
+    </div>
     
-    <%- include('../partials/footer') %>
-    
-    <script src="/js/main.js"></script>
-</body>
-</html>
+    <form action="/admin/users/edit/<%= user._id %>" method="POST" data-validate>
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <div class="form-group">
+            <label for="username" class="form-label">Username</label>
+            <input 
+                type="text" 
+                id="username" 
+                name="username" 
+                class="form-input" 
+                value="<%= user.username %>"
+                required 
+                minlength="3"
+                maxlength="20"
+                pattern="[a-zA-Z0-9_]+"
+                title="Username can only contain letters, numbers, and underscores"
+            >
+        </div>
+        
+        <div class="form-group">
+            <label for="email" class="form-label">Email Address</label>
+            <input 
+                type="email" 
+                id="email" 
+                name="email" 
+                class="form-input" 
+                value="<%= user.email %>"
+                required 
+            >
+        </div>
+        
+        <div class="form-group">
+            <label for="password" class="form-label">Password (leave blank to keep current)</label>
+            <input 
+                type="password" 
+                id="password" 
+                name="password" 
+                class="form-input" 
+                minlength="6"
+                data-strength
+            >
+        </div>
+        
+        <div class="form-group">
+            <label for="role" class="form-label">Role</label>
+            <select id="role" name="role" class="form-select" required>
+                <option value="user" <%= user.role === 'user' ? 'selected' : '' %>>User</option>
+                <option value="admin" <%= user.role === 'admin' ? 'selected' : '' %>>Admin</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="package" class="form-label">Package</label>
+            <select id="package" name="package" class="form-select" required>
+                <% packages.forEach(pkg => { %>
+                    <option 
+                        value="<%= pkg._id %>" 
+                        <%= user.package._id.toString() === pkg._id.toString() ? 'selected' : '' %>
+                    >
+                        <%= pkg.name %> - <%= pkg.emailCredits.toLocaleString() %> credits, <%= pkg.concurrencyLimit %> concurrent
+                    </option>
+                <% }) %>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="packageEndDate" class="form-label">Package End Date</label>
+            <input 
+                type="date" 
+                id="packageEndDate" 
+                name="packageEndDate" 
+                class="form-input" 
+                value="<%= user.packageEndDate.toISOString().split('T')[0] %>"
+                required 
+            >
+        </div>
+        
+        <div class="form-group">
+            <label for="isActive" class="form-label">Account Status</label>
+            <select id="isActive" name="isActive" class="form-select" required>
+                <option value="true" <%= user.isActive ? 'selected' : '' %>>Active</option>
+                <option value="false" <%= !user.isActive ? 'selected' : '' %>>Inactive</option>
+            </select>
+        </div>
+        
+        <button type="submit" class="btn btn-primary" style="width: 100%;">
+            Update User
+        </button>
+    </form>
+</div>

@@ -1,100 +1,79 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= title %> - Gmail Checker Auth</title>
-    <link rel="stylesheet" href="/css/style.css">
-</head>
-<body>
-    <%- include('../partials/header') %>
+<div class="d-flex justify-between align-center mb-3">
+    <h1>Edit Package: <%= package.name %></h1>
+    <a href="/admin/packages" class="btn btn-secondary">Back to Packages</a>
+</div>
+
+<div class="form-container" style="max-width: 600px;">
+    <% if (error) { %>
+        <div class="alert alert-error"><%= error %></div>
+    <% } %>
     
-    <main class="main-content">
-        <div class="container">
-            <div class="d-flex justify-between align-center mb-3">
-                <h1>Edit Package: <%= package.name %></h1>
-                <a href="/admin/packages" class="btn btn-secondary">Back to Packages</a>
-            </div>
-            
-            <div class="form-container" style="max-width: 600px;">
-                <% if (error) { %>
-                    <div class="alert alert-error"><%= error %></div>
-                <% } %>
-                
-                <form action="/admin/packages/edit/<%= package._id %>" method="POST" data-validate>
-                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                    <div class="form-group">
-                        <label for="name" class="form-label">Package Name</label>
-                        <input 
-                            type="text" 
-                            id="name" 
-                            name="name" 
-                            class="form-input" 
-                            value="<%= package.name %>"
-                            required 
-                            minlength="2"
-                            maxlength="50"
-                        >
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="emailCredits" class="form-label">Email Credits per Month</label>
-                        <input 
-                            type="number" 
-                            id="emailCredits" 
-                            name="emailCredits" 
-                            class="form-input" 
-                            value="<%= package.emailCredits %>"
-                            required 
-                            min="0"
-                            max="1000000"
-                        >
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="concurrencyLimit" class="form-label">Concurrency Limit</label>
-                        <input 
-                            type="number" 
-                            id="concurrencyLimit" 
-                            name="concurrencyLimit" 
-                            class="form-input" 
-                            value="<%= package.concurrencyLimit %>"
-                            required 
-                            min="1"
-                            max="1000"
-                        >
-                        <small class="text-muted">Maximum number of concurrent email validations</small>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="features" class="form-label">Features (one per line)</label>
-                        <textarea 
-                            id="features" 
-                            name="features" 
-                            class="form-input" 
-                            rows="6"
-                        ><%= package.features.join('\n') %></textarea>
-                        <small class="text-muted">Enter each feature on a new line</small>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="isActive" class="form-label">Package Status</label>
-                        <select id="isActive" name="isActive" class="form-select" required>
-                            <option value="true" <%= package.isActive ? 'selected' : '' %>>Active</option>
-                            <option value="false" <%= !package.isActive ? 'selected' : '' %>>Inactive</option>
-                        </select>
-                    </div>
-                    
-                    <button type="submit" class="btn btn-primary" style="width: 100%;">
-                        Update Package
-                    </button>
-                </form>
-            </div>
+    <form action="/admin/packages/edit/<%= package._id %>" method="POST" data-validate>
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <div class="form-group">
+            <label for="name" class="form-label">Package Name</label>
+            <input 
+                type="text" 
+                id="name" 
+                name="name" 
+                class="form-input" 
+                value="<%= package.name %>"
+                required 
+                minlength="2"
+                maxlength="50"
+            >
         </div>
-    </main>
-    
-    <%- include('../partials/footer') %>
-    
-    <script src="/js/main.js"></script>
-</body>
-</html>
+        
+        <div class="form-group">
+            <label for="emailCredits" class="form-label">Email Credits per Month</label>
+            <input 
+                type="number" 
+                id="emailCredits" 
+                name="emailCredits" 
+                class="form-input" 
+                value="<%= package.emailCredits %>"
+                required 
+                min="0"
+                max="1000000"
+            >
+        </div>
+        
+        <div class="form-group">
+            <label for="concurrencyLimit" class="form-label">Concurrency Limit</label>
+            <input 
+                type="number" 
+                id="concurrencyLimit" 
+                name="concurrencyLimit" 
+                class="form-input" 
+                value="<%= package.concurrencyLimit %>"
+                required 
+                min="1"
+                max="1000"
+            >
+            <small class="text-muted">Maximum number of concurrent email validations</small>
+        </div>
+        
+        <div class="form-group">
+            <label for="features" class="form-label">Features (one per line)</label>
+            <textarea 
+                id="features" 
+                name="features" 
+                class="form-input" 
+                rows="6"
+            ><%= package.features.join('\n') %></textarea>
+            <small class="text-muted">Enter each feature on a new line</small>
+        </div>
+        
+        <div class="form-group">
+            <label for="isActive" class="form-label">Package Status</label>
+            <select id="isActive" name="isActive" class="form-select" required>
+                <option value="true" <%= package.isActive ? 'selected' : '' %>>Active</option>
+                <option value="false" <%= !package.isActive ? 'selected' : '' %>>Inactive</option>
+            </select>
+        </div>
+        
+        <button type="submit" class="btn btn-primary" style="width: 100%;">
+            Update Package
+        </button>
+    </form>
+</div>

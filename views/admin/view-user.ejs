@@ -1,149 +1,128 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= title %> - Gmail Checker Auth</title>
-    <link rel="stylesheet" href="/css/style.css">
-</head>
-<body>
-    <%- include('../partials/header') %>
-    
-    <main class="main-content">
-        <div class="container">
-            <div class="d-flex justify-between align-center mb-3">
-                <h1>User Details: <%= user.username %></h1>
-                <div class="d-flex gap-2">
-                    <a href="/admin/users/edit/<%= user._id %>" class="btn btn-primary">Edit User</a>
-                    <a href="/admin/users" class="btn btn-secondary">Back to Users</a>
-                </div>
-            </div>
-            
-            <div class="dashboard-grid">
-                <!-- Basic Information -->
-                <div class="card">
-                    <div class="card-header">
-                        <h2 class="card-title">Basic Information</h2>
-                    </div>
-                    <p><strong>Username:</strong> <%= user.username %></p>
-                    <p><strong>Email:</strong> <%= user.email %></p>
-                    <p><strong>Role:</strong> 
-                        <span class="<%= user.role === 'admin' ? 'text-primary' : '' %>">
-                            <%= user.role.charAt(0).toUpperCase() + user.role.slice(1) %>
-                        </span>
-                    </p>
-                    <p><strong>Account Status:</strong> 
-                        <span class="<%= user.isActive ? 'text-success' : 'text-danger' %>">
-                            <%= user.isActive ? 'Active' : 'Inactive' %>
-                        </span>
-                    </p>
-                    <p><strong>Email Verified:</strong> 
-                        <span class="<%= user.emailVerified ? 'text-success' : 'text-warning' %>">
-                            <%= user.emailVerified ? 'Yes' : 'No' %>
-                        </span>
-                    </p>
-                </div>
-                
-                <!-- Package Information -->
-                <div class="card">
-                    <div class="card-header">
-                        <h2 class="card-title">Package Details</h2>
-                    </div>
-                    <p><strong>Package:</strong> <%= user.package.name %></p>
-                    <p><strong>Email Credits:</strong> <%= user.package.emailCredits.toLocaleString() %> per month</p>
-                    <p><strong>Concurrency Limit:</strong> <%= user.package.concurrencyLimit %></p>
-                    <p><strong>Package Start:</strong> <%= user.packageStartDate.toLocaleDateString() %></p>
-                    <p><strong>Package End:</strong> <%= user.packageEndDate.toLocaleDateString() %></p>
-                    <p><strong>Days Remaining:</strong> 
-                        <span class="<%= userStats.daysUntilExpiry <= 7 ? 'text-danger' : userStats.daysUntilExpiry <= 30 ? 'text-warning' : 'text-success' %>">
-                            <%= userStats.daysUntilExpiry %> days
-                        </span>
-                    </p>
-                </div>
-                
-                <!-- Account Statistics -->
-                <div class="card">
-                    <div class="card-header">
-                        <h2 class="card-title">Account Statistics</h2>
-                    </div>
-                    <p><strong>Account Created:</strong> <%= user.createdAt.toLocaleDateString() %></p>
-                    <p><strong>Account Age:</strong> <%= userStats.accountAge %> days</p>
-                    <% if (user.lastLogin) { %>
-                        <p><strong>Last Login:</strong> <%= user.lastLogin.toLocaleDateString() %> <%= user.lastLogin.toLocaleTimeString() %></p>
-                        <p><strong>Days Since Last Login:</strong> <%= userStats.daysSinceLastLogin %> days</p>
-                    <% } else { %>
-                        <p><strong>Last Login:</strong> Never</p>
-                    <% } %>
-                    <p><strong>Registered Device:</strong> 
-                        <% if (user.registeredDeviceId) { %>
-                            <span class="text-success"><%= user.registeredDeviceId %></span>
-                            <form action="/admin/users/reset-device/<%= user._id %>" method="POST" style="display: inline; margin-left: 10px;">
-                                <button type="submit" class="btn btn-warning btn-sm" onclick="return confirm('Are you sure you want to reset the device registration for this user?')">
-                                    Reset Device
-                                </button>
-                            </form>
-                        <% } else { %>
-                            <span class="text-muted">Not registered</span>
-                        <% } %>
-                    </p>
-                    <p><strong>Last Updated:</strong> <%= user.updatedAt.toLocaleDateString() %> <%= user.updatedAt.toLocaleTimeString() %></p>
-                </div>
-                
-                <!-- Package Features -->
-                <div class="card">
-                    <div class="card-header">
-                        <h2 class="card-title">Package Features</h2>
-                    </div>
-                    <ul>
-                        <% user.package.features.forEach(feature => { %>
-                            <li><%= feature %></li>
-                        <% }) %>
-                    </ul>
-                </div>
-            </div>
-            
-            <!-- Quick Actions -->
-            <div class="card mt-3">
-                <div class="card-header">
-                    <h2 class="card-title">Quick Actions</h2>
-                </div>
-                <div class="d-flex gap-2" style="flex-wrap: wrap;">
-                    <% if (user.isActive) { %>
-                        <form action="/admin/users/bulk-action" method="POST" style="display: inline;">
-                            <input type="hidden" name="action" value="deactivate">
-                            <input type="hidden" name="userIds" value="<%= user._id %>">
-                            <button type="submit" class="btn btn-warning" onclick="return confirm('Are you sure you want to deactivate this user?')">
-                                Deactivate Account
-                            </button>
-                        </form>
-                    <% } else { %>
-                        <form action="/admin/users/bulk-action" method="POST" style="display: inline;">
-                            <input type="hidden" name="action" value="activate">
-                            <input type="hidden" name="userIds" value="<%= user._id %>">
-                            <button type="submit" class="btn btn-success" onclick="return confirm('Are you sure you want to activate this user?')">
-                                Activate Account
-                            </button>
-                        </form>
-                    <% } %>
-                    
-                    <a href="/admin/users/edit/<%= user._id %>" class="btn btn-primary">Edit User</a>
-                    
-                    <form action="/admin/users/delete/<%= user._id %>" method="POST" style="display: inline;">
-                        <button 
-                            type="submit" 
-                            class="btn btn-danger"
-                            data-confirm-delete="Are you sure you want to delete user '<%= user.username %>'? This action cannot be undone."
-                        >
-                            Delete User
-                        </button>
-                    </form>
-                </div>
-            </div>
+<div class="d-flex justify-between align-center mb-3">
+    <h1>User Details: <%= user.username %></h1>
+    <div class="d-flex gap-2">
+        <a href="/admin/users/edit/<%= user._id %>" class="btn btn-primary">Edit User</a>
+        <a href="/admin/users" class="btn btn-secondary">Back to Users</a>
+    </div>
+</div>
+
+<div class="dashboard-grid">
+    <!-- Basic Information -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Basic Information</h2>
         </div>
-    </main>
+        <p><strong>Username:</strong> <%= user.username %></p>
+        <p><strong>Email:</strong> <%= user.email %></p>
+        <p><strong>Role:</strong> 
+            <span class="<%= user.role === 'admin' ? 'text-primary' : '' %>">
+                <%= user.role.charAt(0).toUpperCase() + user.role.slice(1) %>
+            </span>
+        </p>
+        <p><strong>Account Status:</strong> 
+            <span class="<%= user.isActive ? 'text-success' : 'text-danger' %>">
+                <%= user.isActive ? 'Active' : 'Inactive' %>
+            </span>
+        </p>
+        <p><strong>Email Verified:</strong> 
+            <span class="<%= user.emailVerified ? 'text-success' : 'text-warning' %>">
+                <%= user.emailVerified ? 'Yes' : 'No' %>
+            </span>
+        </p>
+    </div>
     
-    <%- include('../partials/footer') %>
+    <!-- Package Information -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Package Details</h2>
+        </div>
+        <p><strong>Package:</strong> <%= user.package.name %></p>
+        <p><strong>Email Credits:</strong> <%= user.package.emailCredits.toLocaleString() %> per month</p>
+        <p><strong>Concurrency Limit:</strong> <%= user.package.concurrencyLimit %></p>
+        <p><strong>Package Start:</strong> <%= user.packageStartDate.toLocaleDateString() %></p>
+        <p><strong>Package End:</strong> <%= user.packageEndDate.toLocaleDateString() %></p>
+        <p><strong>Days Remaining:</strong> 
+            <span class="<%= userStats.daysUntilExpiry <= 7 ? 'text-danger' : userStats.daysUntilExpiry <= 30 ? 'text-warning' : 'text-success' %>">
+                <%= userStats.daysUntilExpiry %> days
+            </span>
+        </p>
+    </div>
     
-    <script src="/js/main.js"></script>
-</body>
-</html>
+    <!-- Account Statistics -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Account Statistics</h2>
+        </div>
+        <p><strong>Account Created:</strong> <%= user.createdAt.toLocaleDateString() %></p>
+        <p><strong>Account Age:</strong> <%= userStats.accountAge %> days</p>
+        <% if (user.lastLogin) { %>
+            <p><strong>Last Login:</strong> <%= user.lastLogin.toLocaleDateString() %> <%= user.lastLogin.toLocaleTimeString() %></p>
+            <p><strong>Days Since Last Login:</strong> <%= userStats.daysSinceLastLogin %> days</p>
+        <% } else { %>
+            <p><strong>Last Login:</strong> Never</p>
+        <% } %>
+        <p><strong>Registered Device:</strong> 
+            <% if (user.registeredDeviceId) { %>
+                <span class="text-success"><%= user.registeredDeviceId %></span>
+                <form action="/admin/users/reset-device/<%= user._id %>" method="POST" style="display: inline; margin-left: 10px;">
+                    <button type="submit" class="btn btn-warning btn-sm" onclick="return confirm('Are you sure you want to reset the device registration for this user?')">
+                        Reset Device
+                    </button>
+                </form>
+            <% } else { %>
+                <span class="text-muted">Not registered</span>
+            <% } %>
+        </p>
+        <p><strong>Last Updated:</strong> <%= user.updatedAt.toLocaleDateString() %> <%= user.updatedAt.toLocaleTimeString() %></p>
+    </div>
+    
+    <!-- Package Features -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Package Features</h2>
+        </div>
+        <ul>
+            <% user.package.features.forEach(feature => { %>
+                <li><%= feature %></li>
+            <% }) %>
+        </ul>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="card mt-3">
+    <div class="card-header">
+        <h2 class="card-title">Quick Actions</h2>
+    </div>
+    <div class="d-flex gap-2" style="flex-wrap: wrap;">
+        <% if (user.isActive) { %>
+            <form action="/admin/users/bulk-action" method="POST" style="display: inline;">
+                <input type="hidden" name="action" value="deactivate">
+                <input type="hidden" name="userIds" value="<%= user._id %>">
+                <button type="submit" class="btn btn-warning" onclick="return confirm('Are you sure you want to deactivate this user?')">
+                    Deactivate Account
+                </button>
+            </form>
+        <% } else { %>
+            <form action="/admin/users/bulk-action" method="POST" style="display: inline;">
+                <input type="hidden" name="action" value="activate">
+                <input type="hidden" name="userIds" value="<%= user._id %>">
+                <button type="submit" class="btn btn-success" onclick="return confirm('Are you sure you want to activate this user?')">
+                    Activate Account
+                </button>
+            </form>
+        <% } %>
+        
+        <a href="/admin/users/edit/<%= user._id %>" class="btn btn-primary">Edit User</a>
+        
+        <form action="/admin/users/delete/<%= user._id %>" method="POST" style="display: inline;">
+            <button 
+                type="submit" 
+                class="btn btn-danger"
+                data-confirm-delete="Are you sure you want to delete user '<%= user.username %>'? This action cannot be undone."
+            >
+                Delete User
+            </button>
+        </form>
+    </div>
+</div>

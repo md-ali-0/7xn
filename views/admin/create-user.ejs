@@ -1,109 +1,88 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= title %> - Gmail Checker Auth</title>
-    <link rel="stylesheet" href="/css/style.css">
-</head>
-<body>
-    <%- include('../partials/header') %>
+<div class="d-flex justify-between align-center mb-3">
+    <h1>Create New User</h1>
+    <a href="/admin/users" class="btn btn-secondary">Back to Users</a>
+</div>
+
+<div class="form-container" style="max-width: 600px;">
+    <% if (error) { %>
+        <div class="alert alert-error"><%= error %></div>
+    <% } %>
     
-    <main class="main-content">
-        <div class="container">
-            <div class="d-flex justify-between align-center mb-3">
-                <h1>Create New User</h1>
-                <a href="/admin/users" class="btn btn-secondary">Back to Users</a>
-            </div>
-            
-            <div class="form-container" style="max-width: 600px;">
-                <% if (error) { %>
-                    <div class="alert alert-error"><%= error %></div>
-                <% } %>
-                
-                <form action="/admin/users/create" method="POST" data-validate>
-                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                    <div class="form-group">
-                        <label for="username" class="form-label">Username</label>
-                        <input 
-                            type="text" 
-                            id="username" 
-                            name="username" 
-                            class="form-input" 
-                            value="<%= formData.username || '' %>"
-                            required 
-                            minlength="3"
-                            maxlength="20"
-                            pattern="[a-zA-Z0-9_]+"
-                            title="Username can only contain letters, numbers, and underscores"
-                        >
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="email" class="form-label">Email Address</label>
-                        <input 
-                            type="email" 
-                            id="email" 
-                            name="email" 
-                            class="form-input" 
-                            value="<%= formData.email || '' %>"
-                            required 
-                        >
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="password" class="form-label">Password</label>
-                        <input 
-                            type="password" 
-                            id="password" 
-                            name="password" 
-                            class="form-input" 
-                            required 
-                            minlength="6"
-                            data-strength
-                        >
-                    </div>
-                    
-                    <!-- Hidden field for role - always user -->
-                    <input type="hidden" name="role" value="user">
-                    
-                    <div class="form-group">
-                        <label for="package" class="form-label">Package</label>
-                        <select id="package" name="package" class="form-select" required>
-                            <option value="">Select Package</option>
-                            <% packages.forEach(pkg => { %>
-                                <option 
-                                    value="<%= pkg._id %>" 
-                                    <%= formData.package === pkg._id.toString() ? 'selected' : '' %>
-                                >
-                                    <%= pkg.name %> - <%= pkg.emailCredits.toLocaleString() %> credits, <%= pkg.concurrencyLimit %> concurrent
-                                </option>
-                            <% }) %>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="packageEndDate" class="form-label">Package End Date</label>
-                        <input 
-                            type="date" 
-                            id="packageEndDate" 
-                            name="packageEndDate" 
-                            class="form-input" 
-                            value="<%= formData.packageEndDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] %>"
-                            required 
-                        >
-                    </div>
-                    
-                    <button type="submit" class="btn btn-success" style="width: 100%;">
-                        Create User
-                    </button>
-                </form>
-            </div>
+    <form action="/admin/users/create" method="POST" data-validate>
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <div class="form-group">
+            <label for="username" class="form-label">Username</label>
+            <input 
+                type="text" 
+                id="username" 
+                name="username" 
+                class="form-input" 
+                value="<%= formData.username || '' %>"
+                required 
+                minlength="3"
+                maxlength="20"
+                pattern="[a-zA-Z0-9_]+"
+                title="Username can only contain letters, numbers, and underscores"
+            >
         </div>
-    </main>
-    
-    <%- include('../partials/footer') %>
-    
-    <script src="/js/main.js"></script>
-</body>
-</html>
+        
+        <div class="form-group">
+            <label for="email" class="form-label">Email Address</label>
+            <input 
+                type="email" 
+                id="email" 
+                name="email" 
+                class="form-input" 
+                value="<%= formData.email || '' %>"
+                required 
+            >
+        </div>
+        
+        <div class="form-group">
+            <label for="password" class="form-label">Password</label>
+            <input 
+                type="password" 
+                id="password" 
+                name="password" 
+                class="form-input" 
+                required 
+                minlength="6"
+                data-strength
+            >
+        </div>
+        
+        <!-- Hidden field for role - always user -->
+        <input type="hidden" name="role" value="user">
+        
+        <div class="form-group">
+            <label for="package" class="form-label">Package</label>
+            <select id="package" name="package" class="form-select" required>
+                <option value="">Select Package</option>
+                <% packages.forEach(pkg => { %>
+                    <option 
+                        value="<%= pkg._id %>" 
+                        <%= formData.package === pkg._id.toString() ? 'selected' : '' %>
+                    >
+                        <%= pkg.name %> - <%= pkg.emailCredits.toLocaleString() %> credits, <%= pkg.concurrencyLimit %> concurrent
+                    </option>
+                <% }) %>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="packageEndDate" class="form-label">Package End Date</label>
+            <input 
+                type="date" 
+                id="packageEndDate" 
+                name="packageEndDate" 
+                class="form-input" 
+                value="<%= formData.packageEndDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] %>"
+                required 
+            >
+        </div>
+        
+        <button type="submit" class="btn btn-success" style="width: 100%;">
+            Create User
+        </button>
+    </form>
+</div>
