@@ -42,8 +42,12 @@ const packageSchema = new mongoose.Schema(
   },
 )
 
-// Index for better query performance (only non-unique fields to avoid duplicates)
+// Indexes for better query performance
 packageSchema.index({ isActive: 1 })
+packageSchema.index({ emailCredits: 1 }) // For sorting by credits
+packageSchema.index({ name: 1 }) // For searching by name
+// Compound indexes for common query patterns
+packageSchema.index({ isActive: 1, emailCredits: 1 })
 
 // Static method to get active packages
 packageSchema.statics.getActivePackages = function () {
@@ -92,5 +96,21 @@ packageSchema.statics.createDefaultPackages = async function () {
 packageSchema.methods.isValidPackage = function () {
   return this.isActive
 }
+
+// Optimized method for getting package statistics
+packageSchema.statics.getPackageStats = async function() {
+  const stats = await this.aggregate([
+    {
+      $group: {
+        _id: null,
+        total: { $sum: 1 },
+        active: { $sum: { $cond: [{ $eq: ["$isActive", true] }, 1, 0] } },
+        inactive: { $sum: { $cond: [{ $eq: ["$isActive", false] }, 1, 0] } }
+      }
+    }
+  ]);
+  
+  return stats[0] || { total: 0, active: 0, inactive: 0 };
+};
 
 module.exports = mongoose.model("Package", packageSchema)

@@ -21,26 +21,17 @@ router.get("/", checkPackageValidity, async (req, res) => {
       daysUntilExpiry = user.getDaysUntilExpiry()
     }
 
-    // Get package statistics for admin
+    // Get package statistics for admin using optimized method
     let stats = null
     if (user.role === "admin") {
-      const totalUsers = await User.countDocuments({ isActive: true })
-      const expiredUsers = await User.countDocuments({
-        packageEndDate: { $lt: new Date() },
-      })
-      const expiringUsers = await User.countDocuments({
-        packageEndDate: {
-          $gte: new Date(),
-          $lte: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Next 7 days
-        },
-      })
-      const totalPackages = await Package.countDocuments({ isActive: true })
-
+      const statsResult = await User.getUserStats();
+      const packageStats = await Package.getPackageStats();
+      
       stats = {
-        totalUsers,
-        expiredUsers,
-        expiringUsers,
-        totalPackages,
+        totalUsers: statsResult.total,
+        expiredUsers: statsResult.expired,
+        expiringUsers: statsResult.expiring,
+        totalPackages: packageStats.total,
       }
     }
 

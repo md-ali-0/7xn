@@ -2,6 +2,7 @@ const express = require("express")
 const { body, validationResult } = require("express-validator")
 const User = require("../models/User")
 const PackageModel = require("../models/Package")
+const cache = require("../utils/cache")
 const { isAdmin } = require("../middleware/auth")
 
 const router = express.Router()
@@ -14,77 +15,52 @@ router.get("/users", async (req, res) => {
   try {
     const page = Number.parseInt(req.query.page) || 1
     const limit = 10
-    const skip = (page - 1) * limit
 
     const search = req.query.search || ""
     const roleFilter = req.query.role || ""
     const statusFilter = req.query.status || ""
     const packageFilter = req.query.package || ""
 
-    // Build query object
-    const query = {}
-
-    // Search by username or email
-    if (search) {
-      query.$or = [{ username: { $regex: search, $options: "i" } }, { email: { $regex: search, $options: "i" } }]
+    // Create cache key for user stats
+    const statsCacheKey = "userStats"
+    let stats = cache.get(statsCacheKey)
+    
+    // Create cache key for packages
+    const packagesCacheKey = "activePackages"
+    let packages = cache.get(packagesCacheKey)
+    
+    // If not in cache, fetch from database
+    if (!stats) {
+      stats = await User.getUserStats()
+      cache.set(statsCacheKey, stats, 60000) // Cache for 1 minute
+    }
+    
+    if (!packages) {
+      packages = await PackageModel.find({ isActive: true }).sort({ emailCredits: 1 })
+      cache.set(packagesCacheKey, packages, 300000) // Cache for 5 minutes
     }
 
-    // Filter by role
-    if (roleFilter) {
-      query.role = roleFilter
-    }
-
-    // Filter by status
-    if (statusFilter === "active") {
-      query.isActive = true
-    } else if (statusFilter === "inactive") {
-      query.isActive = false
-    } else if (statusFilter === "expired") {
-      query.packageEndDate = { $lt: new Date() }
-    } else if (statusFilter === "expiring") {
-      const nextWeek = new Date()
-      nextWeek.setDate(nextWeek.getDate() + 7)
-      query.packageEndDate = { $gte: new Date(), $lte: nextWeek }
-    }
-
-    // Filter by package
-    if (packageFilter) {
-      query.package = packageFilter
-    }
-
-    const users = await User.find(query).populate("package").sort({ createdAt: -1 }).skip(skip).limit(limit)
-
-    const totalUsers = await User.countDocuments(query)
-    const totalPages = Math.ceil(totalUsers / limit)
-
-    // Get packages for filter dropdown
-    const packages = await PackageModel.find({ isActive: true }).sort({ emailCredits: 1 })
-
-    // Get statistics
-    const stats = {
-      total: await User.countDocuments(),
-      active: await User.countDocuments({ isActive: true }),
-      inactive: await User.countDocuments({ isActive: false }),
-      expired: await User.countDocuments({ packageEndDate: { $lt: new Date() } }),
-      expiring: await User.countDocuments({
-        packageEndDate: {
-          $gte: new Date(),
-          $lte: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-        },
-      }),
-    }
+    // Use optimized method to get users
+    const userData = await User.findUsersWithFilters({}, {
+      page,
+      limit,
+      search,
+      roleFilter,
+      statusFilter,
+      packageFilter
+    })
 
     res.render("admin/users", {
       title: "User Management",
-      users: users,
+      users: userData.users,
       packages: packages,
       stats: stats,
-      currentPage: page,
-      totalPages: totalPages,
-      hasNextPage: page < totalPages,
-      hasPrevPage: page > 1,
-      nextPage: page + 1,
-      prevPage: page - 1,
+      currentPage: userData.currentPage,
+      totalPages: userData.totalPages,
+      hasNextPage: userData.currentPage < userData.totalPages,
+      hasPrevPage: userData.currentPage > 1,
+      nextPage: userData.currentPage + 1,
+      prevPage: userData.currentPage - 1,
       search: search,
       roleFilter: roleFilter,
       statusFilter: statusFilter,
@@ -110,6 +86,7 @@ router.get("/users", async (req, res) => {
   }
 })
 
+// Clear cache when users are modified
 router.post("/users/bulk-action", async (req, res) => {
   try {
     const { action, userIds } = req.body
@@ -121,11 +98,15 @@ router.post("/users/bulk-action", async (req, res) => {
     switch (action) {
       case "activate":
         await User.updateMany({ _id: { $in: userIds } }, { isActive: true })
+        // Clear user stats cache
+        cache.delete("userStats")
         res.redirect("/admin/users?success=Selected users activated successfully")
         break
 
       case "deactivate":
         await User.updateMany({ _id: { $in: userIds } }, { isActive: false })
+        // Clear user stats cache
+        cache.delete("userStats")
         res.redirect("/admin/users?success=Selected users deactivated successfully")
         break
 
@@ -144,6 +125,8 @@ router.post("/users/bulk-action", async (req, res) => {
         }
 
         await User.deleteMany({ _id: { $in: userIds } })
+        // Clear user stats cache
+        cache.delete("userStats")
         res.redirect("/admin/users?success=Selected users deleted successfully")
         break
 
@@ -206,7 +189,14 @@ router.get("/users/view/:id", async (req, res) => {
 // Create user form
 router.get("/users/create", async (req, res) => {
   try {
-    const packages = await PackageModel.find({ isActive: true }).sort({ emailCredits: 1 })
+    // Create cache key for packages
+    const packagesCacheKey = "activePackages"
+    let packages = cache.get(packagesCacheKey)
+    
+    if (!packages) {
+      packages = await PackageModel.find({ isActive: true }).sort({ emailCredits: 1 })
+      cache.set(packagesCacheKey, packages, 300000) // Cache for 5 minutes
+    }
 
     res.render("admin/create-user", {
       title: "Create User",
@@ -248,7 +238,15 @@ router.post(
   async (req, res) => {
     try {
       const errors = validationResult(req)
-      const packages = await PackageModel.find({ isActive: true }).sort({ emailCredits: 1 })
+      
+      // Create cache key for packages
+      const packagesCacheKey = "activePackages"
+      let packages = cache.get(packagesCacheKey)
+      
+      if (!packages) {
+        packages = await PackageModel.find({ isActive: true }).sort({ emailCredits: 1 })
+        cache.set(packagesCacheKey, packages, 300000) // Cache for 5 minutes
+      }
 
       if (!errors.isEmpty()) {
         return res.render("admin/create-user", {
@@ -306,11 +304,23 @@ router.post(
       })
 
       await newUser.save()
+      
+      // Clear caches
+      cache.delete("userStats")
+      cache.delete("activePackages")
 
       res.redirect("/admin/users?success=User created successfully")
     } catch (error) {
       console.error("Create user error:", error)
-      const packages = await PackageModel.find({ isActive: true }).sort({ emailCredits: 1 })
+      
+      // Create cache key for packages
+      const packagesCacheKey = "activePackages"
+      let packages = cache.get(packagesCacheKey)
+      
+      if (!packages) {
+        packages = await PackageModel.find({ isActive: true }).sort({ emailCredits: 1 })
+        cache.set(packagesCacheKey, packages, 300000) // Cache for 5 minutes
+      }
 
       res.render("admin/create-user", {
         title: "Create User",
@@ -328,7 +338,15 @@ router.post(
 router.get("/users/edit/:id", async (req, res) => {
   try {
     const user = await User.findById(req.params.id).populate("package")
-    const packages = await PackageModel.find({ isActive: true }).sort({ emailCredits: 1 })
+    
+    // Create cache key for packages
+    const packagesCacheKey = "activePackages"
+    let packages = cache.get(packagesCacheKey)
+    
+    if (!packages) {
+      packages = await PackageModel.find({ isActive: true }).sort({ emailCredits: 1 })
+      cache.set(packagesCacheKey, packages, 300000) // Cache for 5 minutes
+    }
 
     if (!user) {
       return res.status(404).render("error", {
@@ -340,6 +358,7 @@ router.get("/users/edit/:id", async (req, res) => {
         isAuthenticated: res.locals.isAuthenticated || false,
         isAdmin: res.locals.isAdmin || false,
         currentUser: res.locals.currentUser || null,
+        layout: "layouts/main"
       })
     }
 
@@ -362,6 +381,7 @@ router.get("/users/edit/:id", async (req, res) => {
       isAuthenticated: res.locals.isAuthenticated || false,
       isAdmin: res.locals.isAdmin || false,
       currentUser: res.locals.currentUser || null,
+      layout: "layouts/main"
     })
   }
 })
@@ -383,7 +403,15 @@ router.post(
   async (req, res) => {
     try {
       const user = await User.findById(req.params.id)
-      const packages = await PackageModel.find({ isActive: true }).sort({ emailCredits: 1 })
+      
+      // Create cache key for packages
+      const packagesCacheKey = "activePackages"
+      let packages = cache.get(packagesCacheKey)
+      
+      if (!packages) {
+        packages = await PackageModel.find({ isActive: true }).sort({ emailCredits: 1 })
+        cache.set(packagesCacheKey, packages, 300000) // Cache for 5 minutes
+      }
 
       if (!user) {
         return res.status(404).render("error", {
@@ -445,12 +473,23 @@ router.post(
       }
 
       await user.save()
+      
+      // Clear caches
+      cache.delete("userStats")
 
       res.redirect("/admin/users?success=User updated successfully")
     } catch (error) {
       console.error("Update user error:", error)
       const user = await User.findById(req.params.id)
-      const packages = await PackageModel.find({ isActive: true }).sort({ emailCredits: 1 })
+      
+      // Create cache key for packages
+      const packagesCacheKey = "activePackages"
+      let packages = cache.get(packagesCacheKey)
+      
+      if (!packages) {
+        packages = await PackageModel.find({ isActive: true }).sort({ emailCredits: 1 })
+        cache.set(packagesCacheKey, packages, 300000) // Cache for 5 minutes
+      }
 
       res.render("admin/edit-user", {
         title: "Edit User",
@@ -482,6 +521,10 @@ router.post("/users/delete/:id", async (req, res) => {
     }
 
     await User.findByIdAndDelete(req.params.id)
+    
+    // Clear caches
+    cache.delete("userStats")
+
     res.redirect("/admin/users?success=User deleted successfully")
   } catch (error) {
     console.error("Delete user error:", error)
@@ -516,27 +559,36 @@ router.get("/packages", async (req, res) => {
     const limit = 10
     const skip = (page - 1) * limit
 
-    const packages = await PackageModel.find().sort({ emailCredits: 1 }).skip(skip).limit(limit)
-    const totalPackages = await PackageModel.countDocuments()
-    const totalPages = Math.ceil(totalPackages / limit)
-
-    // Get package statistics
-    const stats = {
-      total: await PackageModel.countDocuments(),
-      active: await PackageModel.countDocuments({ isActive: true }),
-      inactive: await PackageModel.countDocuments({ isActive: false }),
-    }
+    // Use Promise.all to execute queries in parallel
+    const [packages, totalPackages, stats] = await Promise.all([
+      PackageModel.find().sort({ emailCredits: 1 }).skip(skip).limit(limit),
+      PackageModel.countDocuments(),
+      PackageModel.getPackageStats()
+    ])
 
     // Get user counts per package
-    const packageStats = await Promise.all(
-      packages.map(async (pkg) => {
-        const userCount = await User.countDocuments({ package: pkg._id })
-        return {
-          ...pkg.toObject(),
-          userCount,
+    const packageUserCounts = await User.aggregate([
+      {
+        $group: {
+          _id: "$package",
+          count: { $sum: 1 }
         }
-      }),
-    )
+      }
+    ])
+
+    // Create a map for quick lookup
+    const userCountMap = {}
+    packageUserCounts.forEach(item => {
+      userCountMap[item._id] = item.count
+    })
+
+    // Add user count to each package
+    const packageStats = packages.map(pkg => ({
+      ...pkg.toObject(),
+      userCount: userCountMap[pkg._id] || 0
+    }))
+
+    const totalPages = Math.ceil(totalPackages / limit)
 
     res.render("admin/packages", {
       title: "Package Management",
@@ -631,6 +683,10 @@ router.post(
       })
 
       await newPackage.save()
+      
+      // Clear package cache
+      cache.delete("activePackages")
+
       res.redirect("/admin/packages?success=Package created successfully")
     } catch (error) {
       console.error("Create package error:", error)
@@ -761,6 +817,10 @@ router.post(
       pkg.isActive = isActive === "true"
 
       await pkg.save()
+      
+      // Clear package cache
+      cache.delete("activePackages")
+
       res.redirect("/admin/packages?success=Package updated successfully")
     } catch (error) {
       console.error("Update package error:", error)
@@ -789,10 +849,11 @@ router.get("/packages/view/:id", async (req, res) => {
           status: 404,
           message: "Package not found",
         },
+        layout: "layouts/main"
       })
     }
 
-    // Get users with this package
+    // Get users with this package using optimized query
     const users = await User.find({ package: pkg._id })
       .select("username email isActive packageEndDate")
       .sort({ createdAt: -1 })
@@ -842,6 +903,10 @@ router.post("/packages/delete/:id", async (req, res) => {
     }
 
     await PackageModel.findByIdAndDelete(req.params.id)
+    
+    // Clear package cache
+    cache.delete("activePackages")
+
     res.redirect("/admin/packages?success=Package deleted successfully")
   } catch (error) {
     console.error("Delete package error:", error)

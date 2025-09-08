@@ -81,10 +81,16 @@ const userSchema = new mongoose.Schema(
   },
 )
 
-// Indexes for better query performance (only non-unique fields to avoid duplicates)
+// Indexes for better query performance
 userSchema.index({ role: 1 })
 userSchema.index({ isActive: 1 })
 userSchema.index({ packageEndDate: 1 })
+userSchema.index({ createdAt: -1 }) // For sorting by creation date
+userSchema.index({ username: 1, email: 1 }) // For search operations
+// Compound indexes for common query patterns
+userSchema.index({ isActive: 1, role: 1 })
+userSchema.index({ packageEndDate: 1, isActive: 1 })
+userSchema.index({ "package": 1, "isActive": 1 })
 
 // Pre-save hook to hash password
 userSchema.pre("save", async function (next) {
@@ -168,6 +174,95 @@ userSchema.statics.createDefaultAdmin = async function () {
     console.error("Error creating default admin:", error)
   }
 }
+
+// Optimized method for admin user listing with pagination and filtering
+userSchema.statics.findUsersWithFilters = async function(filters = {}, options = {}) {
+  const {
+    page = 1,
+    limit = 10,
+    search = "",
+    roleFilter = "",
+    statusFilter = "",
+    packageFilter = ""
+  } = options;
+
+  const skip = (page - 1) * limit;
+
+  // Build query object
+  const query = {};
+
+  // Apply filters
+  Object.assign(query, filters);
+
+  // Search by username or email
+  if (search) {
+    query.$or = [
+      { username: { $regex: search, $options: "i" } },
+      { email: { $regex: search, $options: "i" } }
+    ];
+  }
+
+  // Filter by role
+  if (roleFilter) {
+    query.role = roleFilter;
+  }
+
+  // Filter by status
+  if (statusFilter === "active") {
+    query.isActive = true;
+  } else if (statusFilter === "inactive") {
+    query.isActive = false;
+  } else if (statusFilter === "expired") {
+    query.packageEndDate = { $lt: new Date() };
+  } else if (statusFilter === "expiring") {
+    const nextWeek = new Date();
+    nextWeek.setDate(nextWeek.getDate() + 7);
+    query.packageEndDate = { $gte: new Date(), $lte: nextWeek };
+  }
+
+  // Filter by package
+  if (packageFilter) {
+    query.package = packageFilter;
+  }
+
+  // Execute query with pagination
+  const [users, total] = await Promise.all([
+    this.find(query)
+      .populate("package")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit),
+    this.countDocuments(query)
+  ]);
+
+  return {
+    users,
+    total,
+    totalPages: Math.ceil(total / limit),
+    currentPage: page
+  };
+};
+
+// Optimized method for getting user statistics
+userSchema.statics.getUserStats = async function() {
+  const now = new Date();
+  const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+  const [total, active, inactive, expired, expiring] = await Promise.all([
+    this.countDocuments(),
+    this.countDocuments({ isActive: true }),
+    this.countDocuments({ isActive: false }),
+    this.countDocuments({ packageEndDate: { $lt: now } }),
+    this.countDocuments({
+      packageEndDate: {
+        $gte: now,
+        $lte: nextWeek
+      }
+    })
+  ]);
+
+  return { total, active, inactive, expired, expiring };
+};
 
 // Virtual for user's full package info
 userSchema.virtual("packageInfo", {
